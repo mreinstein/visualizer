@@ -6,7 +6,7 @@ A HTML5 audio visualizer for microphone or line-in input.
 
 ## Requirements
 
-Chrome or Firefox is required, though the cloud/starburst visualizer has extremely poor performance on Firefox, and Chrome is much faster in general due to more GPU acceleration.
+Chrome or Firefox is required, though Chrome is much faster in general due to more GPU acceleration.
 
 Because it uses certain HTML5 APIs, this page cannot be run directly from disk and must be run from a web server, even though it is completely static.
 
@@ -17,6 +17,11 @@ Once the page is up, allow it to access microphone/line-in input. Use 1-5 to sel
 On OS X you can use [Soundflower](http://rogueamoeba.com/freebies/soundflower/) to redirect system audio, and on Windows you can use [VB Cable](http://vb-audio.pagesperso-orange.fr/Cable/).
 
 ## History
+
+### 2014-11-29 - v4
+
+  * significantly reduced number of particles on clouds/starburst, now load it instead of generating it
+  * disabled that mode on Firefox
 
 ### 2014-11-29 - v3
 

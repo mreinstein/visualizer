@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body, html { margin: 0; padding: 0; background: #000; overflow: hidden; }
+.hidden { display: none; }
 </style>
 <meta property="og:title" content="Visualizer" />
 <meta property="og:description" content="HTML5 audio visualizer for microphone or line-in input. Chrome recommended, Firefox works OK. Use 1-5 to select a visualization and += to change variants." />
@@ -13,6 +14,7 @@ body, html { margin: 0; padding: 0; background: #000; overflow: hidden; }
 </head>
 <body>
 <canvas id="canvas"></canvas>
+<img id="particleImage" class="hidden" src="particle400.png">
 <script type="text/javascript" src="vizRadialBars.js"></script>
 <script type="text/javascript" src="vizRadialArcs.js"></script>
 <script type="text/javascript" src="vizFlyout.js"></script>

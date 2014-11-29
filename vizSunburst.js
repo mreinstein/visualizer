@@ -2,8 +2,8 @@
 * particles drawn as a cloud of smoke
 */
 function Particle() {
-  this.cx = -100;
-  this.cy = -100;
+  this.cx = -200;
+  this.cy = -200;
   this.regenerate();
 }
 
@@ -40,7 +40,7 @@ function VizSunburst(variant) {
 
   this.vary(variant);
 
-  cv.width = 200;
+  /*cv.width = 200;
   cv.height = 200;
   ctx = cv.getContext("2d");
   ctx.clearRect(0, 0, cv.width, cv.height)
@@ -51,15 +51,20 @@ function VizSunburst(variant) {
   ctx.fillRect(0, 0, 200, 200);
   var src = cv.toDataURL();
   this.particleImage = new Image();
-  this.particleImage.src = src;
+  this.particleImage.src = src;*/
+  this.particleImage = document.getElementById("particleImage");
   
   this.particles = [];
-  for (var i = 0; i < 200; i++) {
+  for (var i = 0; i < 25; i++) {
     this.particles.push(new Particle());
   }
 }
 
 VizSunburst.prototype.vary = function(variant) {
+  // blending is horrifically slow on Firefox, so skip that variant
+  if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
+    variant = 1;
+  }
   this.variant = variant;
   this.clouds = this.variants[variant][0];
 }
