@@ -40,7 +40,7 @@ window.onload = function() {
     var ev = e || event;
     if (ev.keyCode >= 49 && ev.keyCode < 49 + visualizers.length) {
       currentViz = ev.keyCode - 49;
-    } else if (ev.keyCode == 187) {
+    } else if (ev.keyCode == 187 || ev.keyCode == 61) {
       vary();
     }
     //console.log(ev.keyCode);
