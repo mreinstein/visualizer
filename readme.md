@@ -12,7 +12,7 @@ Because it uses certain HTML5 APIs, this page cannot be run directly from disk a
 
 ## Usage
 
-Once the page is up, allow it to access microphone/line-in input. Use the number keys to select a visualization, and the += key to switch between variants of that visualization.
+Once the page is up, allow it to access microphone/line-in input. Use 1-5 to select a visualization, and the += key to switch between variants of that visualization.
 
 On OS X you can use [Soundflower](http://rogueamoeba.com/freebies/soundflower/) to redirect system audio, and on Windows you can use [VB Cable](http://vb-audio.pagesperso-orange.fr/Cable/).
 
@@ -24,7 +24,7 @@ On OS X you can use [Soundflower](http://rogueamoeba.com/freebies/soundflower/) 
   * added box visualization
   * added variants functionality
 
-## 2014-11-27 - v2
+### 2014-11-27 - v2
 
   * added clouds/starburst mode
 
