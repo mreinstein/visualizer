@@ -6,7 +6,6 @@ function VizFlyout() {
   this.hasVariants = false;
 
   this.distances = [];
-  console.log(bandCount);
   for (var i = 0; i < bandCount; i++) {
     this.distances.push(0);
   }
