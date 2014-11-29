@@ -2,7 +2,7 @@
 
 A HTML5 audio visualizer for microphone or line-in input.
 
-![](thumbnail.png)
+![](thumbnail.jpg)
 
 ## Requirements
 
