@@ -18,6 +18,10 @@ On OS X you can use [Soundflower](http://rogueamoeba.com/freebies/soundflower/) 
 
 ## History
 
+### 2014-11-30 - v5
+
+  * added spike and image visualizations
+
 ### 2014-11-29 - v4
 
   * significantly reduced number of particles on clouds/starburst, now load it instead of generating it

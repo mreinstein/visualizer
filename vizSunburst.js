@@ -60,6 +60,8 @@ function VizSunburst(variant) {
   }
 }
 
+VizSunburst.prototype.resize = function() {}
+
 VizSunburst.prototype.vary = function(variant) {
   // blending is horrifically slow on Firefox, so skip that variant
   if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
@@ -92,7 +94,6 @@ VizSunburst.prototype.draw = function(array) {
   
   for (var i = 0; i < bandCount; i++) {
     ctx.rotate(rotateAmount);
-    var avg = 2;
     var hue = (360.0 / bandCount * i) / 360.0;
     var brightness = constrain(array[i] * 1.0 / 200, 0.1, 1);
     ctx.fillStyle = HSVtoRGB(hue, 1, brightness);

@@ -9,6 +9,8 @@ function VizRadialBars(variant) {
   this.vary(variant);
 }
 
+VizRadialBars.prototype.resize = function() {}
+
 VizRadialBars.prototype.vary = function(variant) {
   this.variant = variant;
   this.fade = this.variants[variant][0];

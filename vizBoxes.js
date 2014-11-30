@@ -10,6 +10,8 @@ function VizBoxes(variant) {
   this.hueOffset = 0;
 }
 
+VizBoxes.prototype.resize = function() {}
+
 VizBoxes.prototype.vary = function(variant) {
   this.variant = variant;
   this.grow = this.variants[variant][0];

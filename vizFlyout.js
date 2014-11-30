@@ -11,6 +11,8 @@ function VizFlyout() {
   }
 }
 
+VizFlyout.prototype.resize = function() {}
+
 VizFlyout.prototype.draw = function(array) {
   ctx.clearRect(0, 0, cv.width, cv.height)
   ctx.translate(cv.width / 2, cv.height / 2);

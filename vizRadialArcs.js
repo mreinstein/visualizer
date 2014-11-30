@@ -15,6 +15,8 @@ VizRadialArcs.prototype.vary = function(variant) {
   this.fade = this.variants[variant][1];
 }
 
+VizRadialArcs.prototype.resize = function() {}
+
 VizRadialArcs.prototype.draw = function(spectrum) {
   ctx.clearRect(0, 0, cv.width, cv.height)
   ctx.translate(cv.width / 2, cv.height / 2);

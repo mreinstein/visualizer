@@ -12,6 +12,7 @@ var shortestSide, longestSide, hypotenuse;
 var allRotate = 0;
 var rotateAmount, centerRadius, bandWidth, heightMultiplier;
 var colors = [];
+var bigColorMap = [];
 
 // for audio processing
 var audioBuffer;
@@ -36,6 +37,8 @@ window.onload = function() {
   visualizers.push(new VizFlyout());
   visualizers.push(new VizSunburst(0));
   visualizers.push(new VizBoxes(0));
+  visualizers.push(new VizSpikes());
+  visualizers.push(new VizImage());
   document.getElementsByTagName('body')[0].onkeyup = function(e) { 
     var ev = e || event;
     if (ev.keyCode >= 49 && ev.keyCode < 49 + visualizers.length) {
@@ -136,6 +139,16 @@ function generateColors() {
     colors.push(HSVtoRGB(hue, 1, 1));
     colors.push(HSVtoRGB(hue, 1, 0.5));
   }
+  for (var hue = 0; hue < 360; hue++) {
+    for (var brightness = 0; brightness < 100; brightness++) {
+      var color = HSVtoRGB(hue / 360, 1, brightness / 100, true);
+      /*if (hue % 10 == 0 && brightness % 10 == 0) {
+        console.log(hue, brightness, color);
+      }*/
+      bigColorMap.push(color);
+    }
+  }
+  //console.log(HSVtoRGB(hue, 1, brightness, true).length * 360 * 100);
 }
 
 function recalculateSizes() {
@@ -147,6 +160,7 @@ function recalculateSizes() {
   centerRadius = 85.0 / 800 * shortestSide;
   heightMultiplier = 1.0 / 800 * shortestSide;
   bandWidth = Math.PI * 2 * centerRadius / bandCount;
+  visualizers[currentViz].resize();
 }
 
 function constrain(input, min, max) {
@@ -192,8 +206,14 @@ function reduceBuckets(input, size) {
   return output;
 }
 
+// http://stackoverflow.com/a/5624139
+function componentToHex(c) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+
 // http://stackoverflow.com/a/17243070
-function HSVtoRGB(h, s, v) {
+function HSVtoRGB(h, s, v, hex, separate) {
     var r, g, b, i, f, p, q, t;
     if (h && s === undefined && v === undefined) {
         s = h.s, v = h.v, h = h.h;
@@ -211,6 +231,14 @@ function HSVtoRGB(h, s, v) {
         case 4: r = t, g = p, b = v; break;
         case 5: r = v, g = p, b = q; break;
     }
-    return 'rgb(' + Math.floor(r * 255) + ',' + Math.floor(g * 255) + ',' +
-      Math.floor(b * 255) + ')'; 
+    r = Math.floor(r * 255);
+    g = Math.floor(g * 255);
+    b = Math.floor(b * 255);
+    if (hex) {
+      return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b);
+    } else if (separate) {
+      return [r, g, b];
+    } else {
+      return 'rgb(' + r + ',' + g + ',' + b + ')';
+    }
 }
