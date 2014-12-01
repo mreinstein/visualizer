@@ -5,11 +5,14 @@ VizImage.prototype.generateGreyscaleBuckets = function(image, divisions) {
   this.width = image.width;
   this.height = image.height;
 
-  ctx = cv.getContext("2d");
-  ctx.clearRect(0, 0, this.width, this.height);
-  ctx.drawImage(image, 0, 0, this.width, this.height);
+  cv2.width = this.width;
+  cv2.height = this.height;
+  var buffer = cv2.getContext("2d");
+  buffer.clearRect(0, 0, this.width, this.height);
+  buffer.drawImage(image, 0, 0, this.width, this.height);
 
-  var imageData = ctx.getImageData(0, 0, this.width, this.height);
+  var imageData = buffer.getImageData(0, 0, this.width, this.height);
+  this.greyscaled = [];
   this.greyscaled2 = [];
   for (var i = 0; i < divisions; i++) {
     this.greyscaled2.push([]);
@@ -29,7 +32,17 @@ VizImage.prototype.generateGreyscaleBuckets = function(image, divisions) {
 
     /*var interval = Math.floor(256 / divisions)
     grey = (grey - (grey % interval));*/
+    this.greyscaled[j] = grey;
     this.greyscaled2[grey].push([j % this.width, Math.floor(j / this.width)]);
+  }
+
+  // create temporary frame to be modified each draw call
+  this.frame = buffer.createImageData(this.width, this.height);
+  for (var i = 0; i < this.width * this.height; i++) {
+    this.frame.data[i*4+0] = 255;
+    this.frame.data[i*4+1] = 255 * (i % 4);
+    this.frame.data[i*4+2] = 255;
+    this.frame.data[i*4+3] = 255;
   }
 }
 
@@ -40,6 +53,7 @@ function VizImage() {
   this.generateGreyscaleBuckets(document.getElementById("image"), 128);
   this.resize();
   this.hueOffset = 0;
+
 }
 
 VizImage.prototype.resize = function() {
@@ -56,14 +70,21 @@ VizImage.prototype.draw = function(array) {
   ctx.translate(this.tX, this.tY);
   this.hueOffset += 1;
 
-  for (var i = 0; i < 128; i++) {
-    var hue = Math.floor((360.0 / bandCount * i + this.hueOffset) % 360);
-    var brightness = constrain(Math.floor(array[i] / 1.5), 0, 99);
-    ctx.fillStyle = bigColorMap[hue * 100 + brightness];
-    for (var j = 0; j < this.greyscaled2[i].length; j++) {
-      var p = this.greyscaled2[i][j];
-      ctx.fillRect(p[0] * this.scale, p[1] * this.scale,
-        this.scale, this.scale);
-    }
+  for (var i = 0; i < this.greyscaled.length; i++) {
+    var intensity = this.greyscaled[i];
+    var hue = Math.floor(array[intensity] + this.hueOffset) % 360;
+    var brightness = constrain(Math.floor(array[intensity] / 1.5), 0, 99);
+    var color = bigColorMap2[hue * 100 + brightness];
+    this.frame.data[i*4]   = color[0];
+    this.frame.data[i*4+1] = color[1];
+    this.frame.data[i*4+2] = color[2];
   }
+
+  cv2.width = this.width;
+  cv2.height = this.height;
+  var buffer = cv2.getContext("2d");
+  buffer.putImageData(this.frame, 0, 0);
+  ctx.scale(this.scale, this.scale);
+  ctx.drawImage(cv2, 0, 0);
+  ctx.scale(1, 1);
 }

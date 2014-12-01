@@ -94,9 +94,9 @@ VizSunburst.prototype.draw = function(array) {
   
   for (var i = 0; i < bandCount; i++) {
     ctx.rotate(rotateAmount);
-    var hue = (360.0 / bandCount * i) / 360.0;
-    var brightness = constrain(array[i] * 1.0 / 200, 0.1, 1);
-    ctx.fillStyle = HSVtoRGB(hue, 1, brightness);
+    var hue = Math.floor(360.0 / bandCount * i) % 360;
+    var brightness = constrain(Math.floor(array[i] / 2), 10, 99);
+    ctx.fillStyle = bigColorMap[hue * 100 + brightness];
     ctx.beginPath();
     ctx.arc(0, 0, longestSide * 1.5, 0, rotateAmount + 0.1);
     ctx.lineTo(0, 0);

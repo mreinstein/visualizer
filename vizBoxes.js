@@ -44,9 +44,9 @@ VizBoxes.prototype.draw = function(array) {
 
     for (var j = 0; j < Math.floor(loop / 2) + 1; j++) {
       //console.log(i + ": [" + x + "," + y + "] " + (loop / 2 + 1));
-      var hue = ((360.0 / (size * size) * i + this.hueOffset) % 360) / 360.0;
-      var brightness = constrain(array[i] / 150, 0.1, 1);
-      ctx.fillStyle = HSVtoRGB(hue, 1, brightness);
+      var hue = Math.floor(360.0 / (size * size) * i + this.hueOffset) % 360;
+      var brightness = constrain(Math.floor(array[i] / 1.5), 10, 99);
+      ctx.fillStyle = bigColorMap[hue * 100 + brightness];
       var intensity = 0.9;
       if (this.grow) {
         intensity = array[i] / 255 / 4 + 0.65;

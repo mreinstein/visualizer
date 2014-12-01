@@ -1,82 +1,90 @@
 var cv = document.getElementById("canvas");
+var cv2 = document.getElementById("buffer");
 var ctx;
-
-var fftSize = 256;
-var bandCount = Math.round(fftSize / 3);
-var lastVolumes = [];
 
 var visualizers = [];
 var currentViz = 0;
+var initialized = false;
 
+// for graphics processing
+var fpsInterval = 1000 / 45;
 var shortestSide, longestSide, hypotenuse;
 var allRotate = 0;
 var rotateAmount, centerRadius, bandWidth, heightMultiplier;
-var colors = [];
 var bigColorMap = [];
+var bigColorMap2 = [];
 
 // for audio processing
-var audioBuffer;
-var sourceNode;
+var audioCtx;
+var source;
 var analyser;
-var javascriptNode;
-var context;
-var mediaStreamSource;
-
-// for forcing a specific frame rate
-var now;
-var then = Date.now();
-var fpsInterval = 1000 / 60;
-var elapsed;
-
-/*******************************************************************************
-* set up visualizers, key handler, and window resize handler
-*/
-window.onload = function() {
-  visualizers.push(new VizRadialArcs(0));
-  visualizers.push(new VizRadialBars(0));
-  visualizers.push(new VizFlyout());
-  visualizers.push(new VizSunburst(0));
-  visualizers.push(new VizBoxes(0));
-  visualizers.push(new VizSpikes());
-  visualizers.push(new VizImage());
-  document.getElementsByTagName('body')[0].onkeyup = function(e) { 
-    var ev = e || event;
-    if (ev.keyCode >= 49 && ev.keyCode < 49 + visualizers.length) {
-      currentViz = ev.keyCode - 49;
-    } else if (ev.keyCode == 187 || ev.keyCode == 61) {
-      vary();
-    }
-    //console.log(ev.keyCode);
-  }
-};
-window.onresize = function() { recalculateSizes(); };
+var spectrum;
+var bandCount;
+var lastVolumes = [];
 
 /*******************************************************************************
 * sets up mic/line-in input, and the application loop
 */
+navigator.getUserMedia = (navigator.getUserMedia ||
+                          navigator.webkitGetUserMedia ||
+                          navigator.mozGetUserMedia ||
+                          navigator.msGetUserMedia);
+
 if (navigator.getUserMedia) {
-  navigator.getUserMedia({video: false, audio: true}, onSuccess, onError);
-} else if (navigator.webkitGetUserMedia) {
-  navigator.webkitGetUserMedia({video: false, audio: true}, onSuccess, onError);
-} else if (navigator.mozGetUserMedia) {
-  navigator.mozGetUserMedia({video: false, audio: true}, onSuccess, onError);
+  navigator.getUserMedia({video: false, audio: true},
+
+    // success callback
+    function(stream) {
+      // initialize nodes
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      source = audioCtx.createMediaStreamSource(stream);
+      analyser = audioCtx.createAnalyser();
+
+      // set node properties and connect
+      analyser.smoothingTimeConstant = 0.2;
+      analyser.fftSize = 256;
+      bandCount = Math.round(analyser.fftSize / 3);
+      spectrum = new Uint8Array(analyser.frequencyBinCount);
+      source.connect(analyser);
+
+      // set up visualizer list
+      visualizers.push(new VizRadialArcs(0));
+      visualizers.push(new VizRadialBars(0));
+      visualizers.push(new VizFlyout());
+      visualizers.push(new VizSunburst(0));
+      visualizers.push(new VizBoxes(0));
+      visualizers.push(new VizSpikes());
+      visualizers.push(new VizImage());
+
+      // misc setup
+      for (var i = 0; i < bandCount; i++) { lastVolumes.push(0); }
+      rotateAmount = (Math.PI * 2.0) / bandCount;
+      generateColors();
+      initialized = true;
+
+      recalculateSizes();
+      visualize();
+    },
+
+    // error callback
+    function(e) {
+      console.log(e);
+      alertError();
+    }
+  );
+} else {
+  alertError();
 }
 
-function onSuccess(stream) {
-  if (!window.AudioContext) {
-    if (!window.webkitAudioContext) {
-      alert('no audiocontext found');
-    }
-    window.AudioContext = window.webkitAudioContext;
-  }
-  context = new AudioContext();
-  mediaStreamSource = context.createMediaStreamSource(stream);
-
-  javascriptNode = context.createScriptProcessor(1024, 1, 1);
-  javascriptNode.connect(context.destination);
-  javascriptNode.onaudioprocess = function() {
-    var spectrum = new Uint8Array(analyser.frequencyBinCount);
+/*******************************************************************************
+* called each audio frame, manages rendering of visualization
+*/
+//var counter = 0;
+function visualize() {
+  setTimeout(function() {
+    drawVisual = requestAnimationFrame(visualize);
     analyser.getByteFrequencyData(spectrum);
+
     // dampen falloff
     if (visualizers[currentViz].dampen == true) {
       for (var i = 0; i < spectrum.length; i++) {
@@ -86,34 +94,11 @@ function onSuccess(stream) {
       }
     }
 
-    // draw at a constant framerate
-    now = Date.now();
-    elapsed = now - then;
-    if (elapsed > fpsInterval) {
-      then = now - (elapsed % fpsInterval);
-      cv.width = window.innerWidth;
-      cv.height = window.innerHeight;
-      ctx = cv.getContext("2d");
-      visualizers[currentViz].draw(spectrum);
-    }
-  };
-
-  analyser = context.createAnalyser();
-  analyser.smoothingTimeConstant = 0.2;
-  analyser.fftSize = fftSize;
-  for (var i = 0; i < bandCount; i++) {
-    lastVolumes.push(0);
-  }
-  rotateAmount = (Math.PI * 2.0) / bandCount;
-  generateColors();
-  recalculateSizes();
-
-  mediaStreamSource.connect(analyser);
-  analyser.connect(javascriptNode);
-}
-
-function onError(e) {
-    console.log(e);
+    cv.width = window.innerWidth;
+    cv.height = window.innerHeight;
+    ctx = cv.getContext("2d");
+    visualizers[currentViz].draw(spectrum);
+  }, fpsInterval);
 }
 
 /*******************************************************************************
@@ -131,36 +116,52 @@ function vary() {
 }
 
 /*******************************************************************************
+* set key handler, and window resize handler
+*/
+document.getElementsByTagName('body')[0].onkeyup = function(e) { 
+  var ev = e || event;
+  if (ev.keyCode >= 49 && ev.keyCode < 49 + visualizers.length) {
+    currentViz = ev.keyCode - 49;
+    recalculateSizes();
+  } else if (ev.keyCode == 187 || ev.keyCode == 61) {
+    vary();
+  }
+  //console.log(ev.keyCode);
+}
+window.onresize = function() { recalculateSizes(); };
+
+/*******************************************************************************
 * various utility functions
 */
+function alertError() {
+  alert("Unable to start visualization. Make sure you're using Chrome or " +
+    "Firefox with a microphone set up, and that you allow the page to access" +
+    " the microphone.");
+}
+
 function generateColors() {
-  for (var i = 0; i < bandCount; i++) {
-    var hue = (360.0 / bandCount * i) / 360.0;
-    colors.push(HSVtoRGB(hue, 1, 1));
-    colors.push(HSVtoRGB(hue, 1, 0.5));
-  }
   for (var hue = 0; hue < 360; hue++) {
     for (var brightness = 0; brightness < 100; brightness++) {
-      var color = HSVtoRGB(hue / 360, 1, brightness / 100, true);
-      /*if (hue % 10 == 0 && brightness % 10 == 0) {
-        console.log(hue, brightness, color);
-      }*/
+      var color = HSVtoRGB(hue / 360, 1, brightness / 100, true, false);
       bigColorMap.push(color);
+      var color2 = HSVtoRGB(hue / 360, 1, brightness / 100, false, true);
+      bigColorMap2.push(color2);
     }
   }
-  //console.log(HSVtoRGB(hue, 1, brightness, true).length * 360 * 100);
 }
 
 function recalculateSizes() {
-  cv.width = window.innerWidth;
-  cv.height = window.innerHeight;
-  shortestSide = Math.min(cv.width, cv.height);
-  longestSide = Math.max(cv.width, cv.height);
-  hypotenuse = Math.sqrt(cv.width * cv.width + cv.height * cv.height);
-  centerRadius = 85.0 / 800 * shortestSide;
-  heightMultiplier = 1.0 / 800 * shortestSide;
-  bandWidth = Math.PI * 2 * centerRadius / bandCount;
-  visualizers[currentViz].resize();
+  if (initialized) {
+    cv.width = window.innerWidth;
+    cv.height = window.innerHeight;
+    shortestSide = Math.min(cv.width, cv.height);
+    longestSide = Math.max(cv.width, cv.height);
+    hypotenuse = Math.sqrt(cv.width * cv.width + cv.height * cv.height);
+    centerRadius = 85.0 / 800 * shortestSide;
+    heightMultiplier = 1.0 / 800 * shortestSide;
+    bandWidth = Math.PI * 2 * centerRadius / bandCount;
+    visualizers[currentViz].resize();
+  }
 }
 
 function constrain(input, min, max) {
@@ -180,6 +181,7 @@ function average(array) {
     return sum / array.length;
 }
 
+// TODO: fix this function
 function reduceBuckets(input, size) {
   var output = [];
   var increment = input.length / size;

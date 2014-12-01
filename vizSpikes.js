@@ -17,10 +17,9 @@ VizSpikes.prototype.draw = function(array) {
   ctx.rotate(Math.PI / 2);
   
   for (var i = 0; i < bandCount; i++) {
-    //var hue = (360.0 / bandCount * i) / 360.0;
-    var hue = ((360.0 / bandCount * i + this.hueOffset) % 360) / 360.0;
-    var brightness = constrain(array[i] / 150, 0.15, 1);
-    ctx.fillStyle = HSVtoRGB(hue, 1, brightness);
+    var hue = Math.floor(360.0 / bandCount * i + this.hueOffset) % 360;
+    var brightness = constrain(Math.floor(array[i] / 1.5), 15, 99);
+    ctx.fillStyle = bigColorMap[hue * 100 + brightness];
 
     var inner = shortestSide / 2;
     inner = inner - (inner - centerRadius) * (array[i] / 255);

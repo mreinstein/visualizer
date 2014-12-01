@@ -23,13 +23,12 @@ VizRadialArcs.prototype.draw = function(spectrum) {
   ctx.rotate(allRotate);
   for (var i = 0; i < bandCount; i++) {
     ctx.rotate(rotateAmount);
+    var hue = Math.floor(360.0 / bandCount * i);
+    var brightness = 99;
     if (this.fade) {
-      var hue = (360.0 / bandCount * i) / 360.0;
-      var brightness = constrain(spectrum[i] / 150, 0.25, 1);
-      ctx.fillStyle = HSVtoRGB(hue, 1, brightness);
-    } else {
-      ctx.fillStyle = colors[i * 2];
+      var brightness = constrain(Math.floor(spectrum[i] / 1.5), 25, 99); 
     }
+    ctx.fillStyle = bigColorMap[hue * 100 + brightness];
     ctx.beginPath();
     if (this.gap) {
       ctx.arc(0, 0, centerRadius + Math.max(spectrum[i] * heightMultiplier, 2),

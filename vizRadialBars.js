@@ -22,18 +22,18 @@ VizRadialBars.prototype.draw = function(array) {
   ctx.rotate(allRotate);
   for (var i = 0; i < bandCount; i++) {
     ctx.rotate(rotateAmount);
+    var hue = Math.floor(360.0 / bandCount * i);
     if (this.fade) {
-      var hue = (360.0 / bandCount * i) / 360.0;
-      var brightness = constrain(array[i] / 150, 0.25, 1);
-      ctx.fillStyle = HSVtoRGB(hue, 1, brightness);
+      var brightness = constrain(Math.floor(spectrum[i] / 1.5), 25, 99); 
+      ctx.fillStyle = bigColorMap[hue * 100 + brightness];
       ctx.fillRect(-bandWidth / 2, centerRadius, bandWidth,
         Math.max(2, array[i] * heightMultiplier));
     } else {
       var avg = 0;
       avg = (array[i] + lastVolumes[i]) / 2;
-      ctx.fillStyle = colors[i * 2 + 1];
+      ctx.fillStyle = bigColorMap[hue * 100 + 50];
       ctx.fillRect(-bandWidth / 2, centerRadius + avg, bandWidth, 2);
-      ctx.fillStyle = colors[i * 2];
+      ctx.fillStyle = bigColorMap[hue * 100 + 99];
       ctx.fillRect(-bandWidth / 2, centerRadius, bandWidth,
         array[i] * heightMultiplier);
     }
