@@ -118,7 +118,8 @@ function vary() {
 /*******************************************************************************
 * set key handler, and window resize handler
 */
-document.getElementsByTagName('body')[0].onkeyup = function(e) { 
+var bodyElement = document.getElementsByTagName('body')[0];
+bodyElement.onkeyup = function(e) { 
   var ev = e || event;
   if (ev.keyCode >= 49 && ev.keyCode < 49 + visualizers.length) {
     currentViz = ev.keyCode - 49;
@@ -127,6 +128,10 @@ document.getElementsByTagName('body')[0].onkeyup = function(e) {
     vary();
   }
   //console.log(ev.keyCode);
+}
+bodyElement.onclick = function() {
+  currentViz = (currentViz + 1) % visualizers.length;
+  recalculateSizes();
 }
 window.onresize = function() { recalculateSizes(); };
 
