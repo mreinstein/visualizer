@@ -1,0 +1,24 @@
+{
+  "name": "visualizer.js",
+  "version": "0.0.1",
+  "description": "An HTML5 audio visualizer for mic/line-in input",
+  "main": "index.js",
+  "scripts": {
+    "build": "browserify index.js --standalone visualizer --outfile example/visualizer.browser.js",
+    "start": "serve example/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mreinstein/visualizer.git"
+  },
+  "author": "Ian Harmon",
+  "license": "MIT",
+  "devDependencies": {
+    "browserify": "^14.0.0"
+  },
+  "dependencies": {
+    "get-user-media-promise": "^1.1.1",
+    "raf": "^3.3.0",
+    "serve": "^3.3.0"
+  }
+}
