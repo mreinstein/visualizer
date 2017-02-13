@@ -15,3 +15,11 @@ Because it uses certain HTML5 APIs, this page cannot be run directly from disk a
 Once the page is up, allow it to access microphone/line-in input. Use 1-7 to select a visualization, and the += key to switch between variants of that visualization.
 
 On OS X you can use [Soundflower](http://rogueamoeba.com/freebies/soundflower/) to redirect system audio, and on Windows you can use [VB Cable](http://vb-audio.pagesperso-orange.fr/Cable/).
+
+
+### TODO
+
+* minified build (uglify2, babel)
+* allow passing mediaStream into context
+* fix retina screen display
+* allow the visualizer to be attached to other things besides the window object (e.g., embedding the visualizations in a div)
