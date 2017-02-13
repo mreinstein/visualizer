@@ -19,7 +19,9 @@ On OS X you can use [Soundflower](http://rogueamoeba.com/freebies/soundflower/) 
 
 ### TODO
 
-* minified build (uglify2, babel)
+* reduce size of the png and embed
 * allow passing mediaStream into context
 * fix retina screen display
 * allow the visualizer to be attached to other things besides the window object (e.g., embedding the visualizations in a div)
+* allow setting image config for visualizers
+* minified build (uglify2, babel)
