@@ -30,51 +30,61 @@ module.exports = function visualizer(options={}) {
 
   const lastVolumes = []
 
-  let _init = function() {
-    // sets up mic/line-in input, and the application loop
+  // sets up mic/line-in input
+  let _getMediaStream = function(callback) {
+    if (options.stream) {
+      return setTimeout(function() {
+        callback(null, options.stream)
+      }, 0)
+    }
+
     getUserMedia({ video: false, audio: true })
       .then(function(stream) {
-        // initialize nodes
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-        const source = audioCtx.createMediaStreamSource(stream)
-        analyser = audioCtx.createAnalyser()
-
-        // set node properties and connect
-        analyser.smoothingTimeConstant = 0.2
-        analyser.fftSize = 256
-        const bandCount = Math.round(analyser.fftSize / 3)
-        spectrum = new Uint8Array(analyser.frequencyBinCount)
-        source.connect(analyser)
-
-        // misc setup
-        for (let i = 0; i < bandCount; i++) { lastVolumes.push(0) }
-
-        const rotateAmount = (Math.PI * 2.0) / bandCount
-
-        // set up visualizer list
-        const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image }
-        visualizers.push(vizRadialArcs(options))
-        visualizers.push(vizRadialBars(options))
-        visualizers.push(new vizFlyout(options))
-        visualizers.push(new vizSunburst(options))
-        visualizers.push(new vizBoxes(options))
-        visualizers.push(new vizSpikes(options))
-        visualizers.push(new vizImage(options))
-
-        _recalculateSizes()
-        _visualize()
-
-        window.onresize = function() {
-          _recalculateSizes()
-        }
-
+        callback(null, stream)
       })
       .catch(function(e) {
-        console.log(e)
-        throw new Error("Unable to start visualization. Make sure you're using Chrome or " +
-        "Firefox with a microphone set up, and that you allow the page to access" +
-        " the microphone.")
+        console.log('what happened', e)
+        callback(e)
       })
+  }
+
+
+  let _init = function(stream) {
+    // sets up the application loop
+
+    // initialize nodes
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    const source = audioCtx.createMediaStreamSource(stream)
+    analyser = audioCtx.createAnalyser()
+
+    // set node properties and connect
+    analyser.smoothingTimeConstant = 0.2
+    analyser.fftSize = 256
+    const bandCount = Math.round(analyser.fftSize / 3)
+    spectrum = new Uint8Array(analyser.frequencyBinCount)
+    source.connect(analyser)
+
+    // misc setup
+    for (let i = 0; i < bandCount; i++) { lastVolumes.push(0) }
+
+    const rotateAmount = (Math.PI * 2.0) / bandCount
+
+    // set up visualizer list
+    const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image }
+    visualizers.push(vizRadialArcs(options))
+    visualizers.push(vizRadialBars(options))
+    visualizers.push(new vizFlyout(options))
+    visualizers.push(new vizSunburst(options))
+    visualizers.push(new vizBoxes(options))
+    visualizers.push(new vizSpikes(options))
+    visualizers.push(new vizImage(options))
+
+    _recalculateSizes()
+    _visualize()
+
+    window.onresize = function() {
+      _recalculateSizes()
+    }
   }
 
   let showNextVisualization = function() {
@@ -125,7 +135,15 @@ module.exports = function visualizer(options={}) {
     }, fpsInterval)
   }
 
-  _init()
+  _getMediaStream(function(err, stream) {
+    if(err) {
+      console.log(err)
+      throw new Error("Unable to start visualization. Make sure you're using Chrome or " +
+        "Firefox with a microphone set up, and that you allow the page to access" +
+        " the microphone.")
+    }
+    _init(stream)
+  })
 
   return Object.freeze({ showNextVisualization, showVisualization, vary })
 }
