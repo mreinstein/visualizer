@@ -509,13 +509,16 @@ module.exports = function vizImage(options={}) {
     }
   }
 
-  let img = document.createElement('img')
-  img.onload = function() {
-    _generateGreyscaleBuckets(img, 128)
-    imageLoaded = true
-  }
+  // only load the image if the optional url is defined
+  if(image) {
+    let img = document.createElement('img')
+    img.onload = function() {
+      _generateGreyscaleBuckets(img, 128)
+      imageLoaded = true
+    }
 
-  img.src = image
+    img.src = image
+  }
   resize()
 
   return Object.freeze({ resize, draw })
