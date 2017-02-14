@@ -80,11 +80,11 @@ module.exports = function visualizer(options={}) {
     const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image }
     visualizers.push(vizRadialArcs(options))
     visualizers.push(vizRadialBars(options))
-    visualizers.push(new vizFlyout(options))
-    visualizers.push(new vizSunburst(options))
-    visualizers.push(new vizBoxes(options))
-    visualizers.push(new vizSpikes(options))
-    visualizers.push(new vizImage(options))
+    visualizers.push(vizFlyout(options))
+    visualizers.push(vizSunburst(options))
+    visualizers.push(vizBoxes(options))
+    visualizers.push(vizSpikes(options))
+    visualizers.push(vizImage(options))
 
     _recalculateSizes()
     _visualize()
@@ -133,7 +133,7 @@ module.exports = function visualizer(options={}) {
     const fpsInterval = 1000 / 45
 
     setTimeout(function() {
-      drawVisual = raf(_visualize)
+      raf(_visualize)
       analyser.getByteFrequencyData(spectrum)
 
       // dampen falloff
@@ -174,7 +174,7 @@ module.exports = function vizBoxes(options={}) {
   let variant = 0
   let variants = [[false], [true]]
 
-  let grow
+  let grow, longestSide
   let hueOffset = 0
 
   let draw = function(array) {
@@ -182,17 +182,17 @@ module.exports = function vizBoxes(options={}) {
     //array = reduceBuckets(array, 81)
     ctx.clearRect(0, 0, cv.width, cv.height)
 
-    var size = 11
-    var i = 0
-    var x = Math.floor((size - 1) / 2)
-    var y = x
-    var loop = 0
+    let size = 11
+    let i = 0
+    let x = Math.floor((size - 1) / 2)
+    let y = x
+    let loop = 0
 
-    var dx = 0
-    var dy = 0
+    let dx = 0
+    let dy = 0
     
-    var cw = cv.width / size
-    var ch = cv.height / size
+    let cw = cv.width / size
+    let ch = cv.height / size
     
     while (i < size * size) {
       switch(loop % 4) {
@@ -349,7 +349,7 @@ module.exports = function vizFlyout(options={}) {
 
   let dampen = false
   let allRotate = 0
-  let longestSide
+  let longestSide, heightMultiplier
 
   const distances = []
   for (let i = 0; i < bandCount; i++) {
@@ -606,8 +606,8 @@ const constrain = require('./constrain')
 module.exports = function vizRadialBars(options={}) {
   let { ctx, cv, bandCount, rotateAmount, lastVolumes } = options
 
+  let bandWidth, fade, centerRadius, heightMultiplier
   let dampen = true
-  let bandWidth
   let variant = 0
   let variants = [[false], [true]]
   let allRotate = 0

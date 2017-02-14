@@ -79,11 +79,11 @@ module.exports = function visualizer(options={}) {
     const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image }
     visualizers.push(vizRadialArcs(options))
     visualizers.push(vizRadialBars(options))
-    visualizers.push(new vizFlyout(options))
-    visualizers.push(new vizSunburst(options))
-    visualizers.push(new vizBoxes(options))
-    visualizers.push(new vizSpikes(options))
-    visualizers.push(new vizImage(options))
+    visualizers.push(vizFlyout(options))
+    visualizers.push(vizSunburst(options))
+    visualizers.push(vizBoxes(options))
+    visualizers.push(vizSpikes(options))
+    visualizers.push(vizImage(options))
 
     _recalculateSizes()
     _visualize()
@@ -132,7 +132,7 @@ module.exports = function visualizer(options={}) {
     const fpsInterval = 1000 / 45
 
     setTimeout(function() {
-      drawVisual = raf(_visualize)
+      raf(_visualize)
       analyser.getByteFrequencyData(spectrum)
 
       // dampen falloff
