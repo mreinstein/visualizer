@@ -130,7 +130,7 @@ module.exports = function visualizer(options={}) {
   return Object.freeze({ showNextVisualization, showVisualization, vary })
 }
 
-},{"./lib/VizBoxes":2,"./lib/vizFlyout":6,"./lib/vizImage":7,"./lib/vizRadialArcs":8,"./lib/vizRadialBars":9,"./lib/vizSpikes":10,"./lib/vizSunburst":11,"get-user-media-promise":12,"raf":15}],2:[function(require,module,exports){
+},{"./lib/VizBoxes":2,"./lib/vizFlyout":7,"./lib/vizImage":8,"./lib/vizRadialArcs":9,"./lib/vizRadialBars":10,"./lib/vizSpikes":11,"./lib/vizSunburst":12,"get-user-media-promise":13,"raf":16}],2:[function(require,module,exports){
 var colorMap  = require('./big-color-map')
 var constrain = require('./constrain')
 
@@ -233,7 +233,7 @@ module.exports = {
   bigColorMap2: bigColorMap2
 }
 
-},{"./hsv-to-rgb":5}],4:[function(require,module,exports){
+},{"./hsv-to-rgb":6}],4:[function(require,module,exports){
 module.exports = function constrain(input, min, max) {
   if (input < min) {
     input = min
@@ -244,6 +244,32 @@ module.exports = function constrain(input, min, max) {
 }
 
 },{}],5:[function(require,module,exports){
+
+
+module.exports = function textureImage(image) {
+
+  let canvas = document.createElement('canvas'),
+      ctx = canvas.getContext('2d'),
+      grd
+      
+  canvas.width = 300
+  canvas.height = 300
+
+  // Create gradient
+  grd = ctx.createRadialGradient(150.000, 150.000, 0.000, 150.000, 150.000, 150.000)
+  
+  // Add colors
+  grd.addColorStop(0.000, 'rgba(255, 255, 255, 1.000)')
+  grd.addColorStop(1.000, 'rgba(255, 255, 255, 0.000)')
+  
+  // Fill with gradient
+  ctx.fillStyle = grd
+  ctx.fillRect(0, 0, 300.000, 300.000)
+
+  image.src = canvas.toDataURL()
+}
+
+},{}],6:[function(require,module,exports){
 // http://stackoverflow.com/a/5624139
 function componentToHex(c) {
     var hex = c.toString(16);
@@ -281,7 +307,7 @@ module.exports = function HSVtoRGB(h, s, v, hex, separate) {
   }
 }
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 const constrain = require('./constrain')
 const HSVtoRGB  = require('./hsv-to-rgb')
 
@@ -349,7 +375,7 @@ module.exports = function vizFlyout(options={}) {
   return Object.freeze({ resize, draw })
 }
 
-},{"./constrain":4,"./hsv-to-rgb":5}],7:[function(require,module,exports){
+},{"./constrain":4,"./hsv-to-rgb":6}],8:[function(require,module,exports){
 const colorMap  = require('./big-color-map')
 const constrain = require('./constrain')
 
@@ -452,7 +478,7 @@ module.exports = function vizImage(options={}) {
   return Object.freeze({ resize, draw })
 }
 
-},{"./big-color-map":3,"./constrain":4}],8:[function(require,module,exports){
+},{"./big-color-map":3,"./constrain":4}],9:[function(require,module,exports){
 const colorMap  = require('./big-color-map')
 const constrain = require('./constrain')
 
@@ -525,7 +551,7 @@ module.exports = function vizRadialArcs(options={}) {
   return Object.freeze({ vary, resize, draw })
 }
 
-},{"./big-color-map":3,"./constrain":4}],9:[function(require,module,exports){
+},{"./big-color-map":3,"./constrain":4}],10:[function(require,module,exports){
 const colorMap  = require('./big-color-map')
 const constrain = require('./constrain')
 
@@ -587,7 +613,7 @@ module.exports = function vizRadialBars(options={}) {
   return Object.freeze({ vary, resize, draw })
 }
 
-},{"./big-color-map":3,"./constrain":4}],10:[function(require,module,exports){
+},{"./big-color-map":3,"./constrain":4}],11:[function(require,module,exports){
 var colorMap  = require('./big-color-map')
 var constrain = require('./constrain')
 
@@ -636,9 +662,10 @@ module.exports = function vizSpikes(options={}) {
   return Object.freeze({ resize, draw })
 }
 
-},{"./big-color-map":3,"./constrain":4}],11:[function(require,module,exports){
+},{"./big-color-map":3,"./constrain":4}],12:[function(require,module,exports){
 const colorMap  = require('./big-color-map')
 const constrain = require('./constrain')
+const texture   = require('./create-gradient-texture')
 
 
 /*******************************************************************************
@@ -698,7 +725,8 @@ module.exports = function vizSunburst(options={}) {
   particleImage = new Image()
   particleImage.src = src
   */
-  let particleImage = document.getElementById('particleImage')
+  let particleImage = document.createElement('img')
+  texture(particleImage)
   
   let particles = []
   for (var i = 0; i < 25; i++) {
@@ -763,7 +791,7 @@ module.exports = function vizSunburst(options={}) {
   return Object.freeze({ vary, resize, draw })
 }
 
-},{"./big-color-map":3,"./constrain":4}],12:[function(require,module,exports){
+},{"./big-color-map":3,"./constrain":4,"./create-gradient-texture":5}],13:[function(require,module,exports){
 // loosely based on example code at https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
 (function (root) {
   'use strict';
@@ -874,7 +902,7 @@ module.exports = function vizSunburst(options={}) {
   }
 }(this));
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 (function (process){
 // Generated by CoffeeScript 1.7.1
 (function() {
@@ -910,7 +938,7 @@ module.exports = function vizSunburst(options={}) {
 }).call(this);
 
 }).call(this,require('_process'))
-},{"_process":14}],14:[function(require,module,exports){
+},{"_process":15}],15:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -1092,7 +1120,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 (function (global){
 var now = require('performance-now')
   , root = typeof window === 'undefined' ? global : window
@@ -1168,5 +1196,5 @@ module.exports.polyfill = function() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"performance-now":13}]},{},[1])(1)
+},{"performance-now":14}]},{},[1])(1)
 });
