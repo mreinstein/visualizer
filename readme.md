@@ -16,7 +16,3 @@ Once the page is up, allow it to access microphone/line-in input. Use 1-7 to sel
 
 On OS X you can use [Soundflower](http://rogueamoeba.com/freebies/soundflower/) to redirect system audio, and on Windows you can use [VB Cable](http://vb-audio.pagesperso-orange.fr/Cable/).
 
-
-### TODO
-
-* minified build (uglify2, babel)
