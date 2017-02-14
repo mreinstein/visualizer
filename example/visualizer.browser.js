@@ -19,6 +19,7 @@ module.exports = function visualizer(options={}) {
   cv.width = window.innerWidth
   cv.height = window.innerHeight
 
+  const image = options.image
   // TODO: support passing in mediaStream instead of instantiating each time
 
   const visualizers = []
@@ -52,7 +53,7 @@ module.exports = function visualizer(options={}) {
         const rotateAmount = (Math.PI * 2.0) / bandCount
 
         // set up visualizer list
-        const options = { cv, ctx, bandCount, rotateAmount, lastVolumes }
+        const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image }
         visualizers.push(vizRadialArcs(options))
         visualizers.push(vizRadialBars(options))
         visualizers.push(new vizFlyout(options))
@@ -382,16 +383,21 @@ const constrain = require('./constrain')
 
 // an image that's colored to the beat
 module.exports = function vizImage(options={}) {
-  let { ctx, cv, bandCount, rotateAmount } = options
+  let { ctx, cv, bandCount, rotateAmount, image } = options
   let dampen = true
 
   let width, height, frame, tX, tY, scale, greyscaled, greyscaled2
+
+  let imageLoaded = false
 
   // create an offscreen image buffer
   const cv2 = document.createElement('canvas')
   let hueOffset = 0
   
   let draw = function(array) {
+    // if the image hasn't loaded yet, don't render the visualization
+    if (!imageLoaded) return
+
     ctx.clearRect(0, 0, cv.width, cv.height)
     ctx.translate(tX, tY)
     hueOffset += 1
@@ -472,7 +478,13 @@ module.exports = function vizImage(options={}) {
     }
   }
 
-  _generateGreyscaleBuckets(document.getElementById("image"), 128)
+  let img = document.createElement('img')
+  img.onload = function() {
+    _generateGreyscaleBuckets(img, 128)
+    imageLoaded = true
+  }
+
+  img.src = image
   resize()
 
   return Object.freeze({ resize, draw })

@@ -18,6 +18,7 @@ module.exports = function visualizer(options={}) {
   cv.width = window.innerWidth
   cv.height = window.innerHeight
 
+  const image = options.image
   // TODO: support passing in mediaStream instead of instantiating each time
 
   const visualizers = []
@@ -51,7 +52,7 @@ module.exports = function visualizer(options={}) {
         const rotateAmount = (Math.PI * 2.0) / bandCount
 
         // set up visualizer list
-        const options = { cv, ctx, bandCount, rotateAmount, lastVolumes }
+        const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image }
         visualizers.push(vizRadialArcs(options))
         visualizers.push(vizRadialBars(options))
         visualizers.push(new vizFlyout(options))
