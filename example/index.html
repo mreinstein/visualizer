@@ -14,17 +14,17 @@
   <script type="text/javascript" src="visualizer.browser.js"></script>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
+  <div id="container" style="width: 400px; height: 390px;"></div>
   <script>
     var viz
 
     try {
       var options = {
-        canvas: document.querySelector('canvas'),
+        //parent: '#container',
         image: 'pyramid.png'
       }
 
-      viz = visualizer(options)
+      viz = visualizer()
     } catch(err) {
       console.error(err.message)
       alert(err.message)

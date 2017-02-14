@@ -19,6 +19,4 @@ On OS X you can use [Soundflower](http://rogueamoeba.com/freebies/soundflower/) 
 
 ### TODO
 
-* fix retina screen display
-* allow the visualizer to be attached to other things besides the window object (e.g., embedding the visualizations in a div)
 * minified build (uglify2, babel)

@@ -13,14 +13,21 @@ const vizImage      = require('./lib/vizImage')
 
 module.exports = function visualizer(options={}) {
 
-  const parentEl = options.parentEl || window
-  const cv = options.canvas
-  const ctx = cv.getContext('2d')
-  cv.width = window.innerWidth
-  cv.height = window.innerHeight
+  const parent = options.parent ? document.querySelector(options.parent) : window
+  const cv = document.createElement('canvas')
+  if (!options.parent) {
+    cv.style.position = 'absolute'
+    cv.style.left = '0'
+    cv.style.top = '0'
+    document.body.appendChild(cv)
+  }
+  else {
+    parent.appendChild(cv)
+  }
 
+  const ctx = cv.getContext('2d')
+  
   const image = options.image
-  // TODO: support passing in mediaStream instead of instantiating each time
 
   const visualizers = []
 
@@ -44,7 +51,6 @@ module.exports = function visualizer(options={}) {
         callback(null, stream)
       })
       .catch(function(e) {
-        console.log('what happened', e)
         callback(e)
       })
   }
@@ -109,8 +115,15 @@ module.exports = function visualizer(options={}) {
   }
 
   let _recalculateSizes = function() {
-    cv.width = parentEl.innerWidth
-    cv.height = parentEl.innerHeight
+    const ratio = window.devicePixelRatio || 1
+
+    const w = parent.innerWidth || parent.clientWidth
+    const h = parent.innerHeight || parent.clientHeight
+
+    cv.width = w * ratio
+    cv.height = h * ratio
+    cv.style.width = w + 'px'
+    cv.style.height = h + 'px'
     visualizers[currentViz].resize()
   }
 
@@ -139,9 +152,9 @@ module.exports = function visualizer(options={}) {
   _getMediaStream(function(err, stream) {
     if(err) {
       console.log(err)
-      throw new Error("Unable to start visualization. Make sure you're using Chrome or " +
-        "Firefox with a microphone set up, and that you allow the page to access" +
-        " the microphone.")
+      throw new Error('Unable to start visualization. Make sure you\'re using Chrome or ' +
+        'Firefox with a microphone set up, and that you allow the page to access' +
+        ' the microphone.')
     }
     _init(stream)
   })
@@ -150,8 +163,8 @@ module.exports = function visualizer(options={}) {
 }
 
 },{"./lib/VizBoxes":2,"./lib/vizFlyout":7,"./lib/vizImage":8,"./lib/vizRadialArcs":9,"./lib/vizRadialBars":10,"./lib/vizSpikes":11,"./lib/vizSunburst":12,"get-user-media-promise":13,"raf":16}],2:[function(require,module,exports){
-var colorMap  = require('./big-color-map')
-var constrain = require('./constrain')
+const colorMap  = require('./big-color-map')
+const constrain = require('./constrain')
 
 
 // a wall of boxes that brighten
@@ -166,20 +179,20 @@ module.exports = function vizBoxes(options={}) {
 
   let draw = function(array) {
     hueOffset += 0.25
-    //array = reduceBuckets(array, 81);
-    ctx.clearRect(0, 0, cv.width, cv.height);
+    //array = reduceBuckets(array, 81)
+    ctx.clearRect(0, 0, cv.width, cv.height)
 
-    var size = 11;
-    var i = 0;
-    var x = Math.floor((size - 1) / 2);
-    var y = x;
-    var loop = 0;
+    var size = 11
+    var i = 0
+    var x = Math.floor((size - 1) / 2)
+    var y = x
+    var loop = 0
 
-    var dx = 0;
-    var dy = 0;
+    var dx = 0
+    var dy = 0
     
-    var cw = cv.width / size;
-    var ch = cv.height / size;
+    var cw = cv.width / size
+    var ch = cv.height / size
     
     while (i < size * size) {
       switch(loop % 4) {
@@ -190,27 +203,27 @@ module.exports = function vizBoxes(options={}) {
       }
 
       for (var j = 0; j < Math.floor(loop / 2) + 1; j++) {
-        //console.log(i + ": [" + x + "," + y + "] " + (loop / 2 + 1));
-        var hue = Math.floor(360.0 / (size * size) * i + hueOffset) % 360;
-        var brightness = constrain(Math.floor(array[i] / 1.5), 10, 99);
-        ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness];
-        var intensity = 0.9;
+        //console.log(i + ': [' + x + ',' + y + '] ' + (loop / 2 + 1))
+        let hue = Math.floor(360.0 / (size * size) * i + hueOffset) % 360
+        let brightness = constrain(Math.floor(array[i] / 1.5), 10, 99)
+        ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness]
+        let intensity = 0.9
         if (grow) {
-          intensity = array[i] / 255 / 4 + 0.65;
-          //intensity = constrain(intensity, 0.1, 0.9);
+          intensity = array[i] / 255 / 4 + 0.65
+          //intensity = constrain(intensity, 0.1, 0.9)
         }
         ctx.fillRect(x * cw + cw / 2 * (1 - intensity),
-          y * ch + ch / 2 * (1 - intensity), cw * intensity, ch * intensity);
+          y * ch + ch / 2 * (1 - intensity), cw * intensity, ch * intensity)
         
-        x += dx;
-        y += dy;
-        i++;
+        x += dx
+        y += dy
+        i++
       }
-      loop++;
+      loop++
     }
 
     // reset current transformation matrix to the identity matrix
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
   }
 
   let resize = function() {
@@ -231,16 +244,16 @@ module.exports = function vizBoxes(options={}) {
 const HSVtoRGB = require('./hsv-to-rgb')
 
 
-var bigColorMap = [];
-var bigColorMap2 = [];
+const bigColorMap = []
+const bigColorMap2 = []
 
 function generateColors() {
-  for (var hue = 0; hue < 360; hue++) {
-    for (var brightness = 0; brightness < 100; brightness++) {
-      var color = HSVtoRGB(hue / 360, 1, brightness / 100, true, false);
-      bigColorMap.push(color);
-      var color2 = HSVtoRGB(hue / 360, 1, brightness / 100, false, true);
-      bigColorMap2.push(color2);
+  for (let hue = 0; hue < 360; hue++) {
+    for (let brightness = 0; brightness < 100; brightness++) {
+      const color = HSVtoRGB(hue / 360, 1, brightness / 100, true, false)
+      bigColorMap.push(color)
+      const color2 = HSVtoRGB(hue / 360, 1, brightness / 100, false, true)
+      bigColorMap2.push(color2)
     }
   }
 }
@@ -263,7 +276,6 @@ module.exports = function constrain(input, min, max) {
 }
 
 },{}],5:[function(require,module,exports){
-
 
 module.exports = function textureImage(image) {
 
@@ -291,21 +303,21 @@ module.exports = function textureImage(image) {
 },{}],6:[function(require,module,exports){
 // http://stackoverflow.com/a/5624139
 function componentToHex(c) {
-    var hex = c.toString(16);
-    return hex.length == 1 ? "0" + hex : hex;
+    let hex = c.toString(16)
+    return hex.length == 1 ? "0" + hex : hex
 }
 
 // http://stackoverflow.com/a/17243070
 module.exports = function HSVtoRGB(h, s, v, hex, separate) {
-  var r, g, b, i, f, p, q, t;
+  let r, g, b, i, f, p, q, t
   if (h && s === undefined && v === undefined) {
-    s = h.s, v = h.v, h = h.h;
+    s = h.s, v = h.v, h = h.h
   }
-  i = Math.floor(h * 6);
-  f = h * 6 - i;
-  p = v * (1 - s);
-  q = v * (1 - f * s);
-  t = v * (1 - (1 - f) * s);
+  i = Math.floor(h * 6)
+  f = h * 6 - i
+  p = v * (1 - s)
+  q = v * (1 - f * s)
+  t = v * (1 - (1 - f) * s)
   switch (i % 6) {
     case 0: r = v, g = t, b = p; break;
     case 1: r = q, g = v, b = p; break;
@@ -314,15 +326,15 @@ module.exports = function HSVtoRGB(h, s, v, hex, separate) {
     case 4: r = t, g = p, b = v; break;
     case 5: r = v, g = p, b = q; break;
   }
-  r = Math.floor(r * 255);
-  g = Math.floor(g * 255);
-  b = Math.floor(b * 255);
+  r = Math.floor(r * 255)
+  g = Math.floor(g * 255)
+  b = Math.floor(b * 255)
   if (hex) {
-    return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b);
+    return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b)
   } else if (separate) {
-    return [r, g, b];
+    return [r, g, b]
   } else {
-    return 'rgb(' + r + ',' + g + ',' + b + ')';
+    return 'rgb(' + r + ',' + g + ',' + b + ')'
   }
 }
 
@@ -340,48 +352,48 @@ module.exports = function vizFlyout(options={}) {
   let longestSide
 
   const distances = []
-  for (var i = 0; i < bandCount; i++) {
+  for (let i = 0; i < bandCount; i++) {
     distances.push(0)
   }
   
   let draw = function(array) {
     ctx.clearRect(0, 0, cv.width, cv.height)
-    ctx.translate(cv.width / 2, cv.height / 2);
-    ctx.rotate(allRotate);
-    for (var i = 0; i < bandCount; i++) {
-      ctx.rotate(rotateAmount);
-      ctx.lineWidth = 1 + (array[i] / 256 * 5);
+    ctx.translate(cv.width / 2, cv.height / 2)
+    ctx.rotate(allRotate)
+    for (let i = 0; i < bandCount; i++) {
+      ctx.rotate(rotateAmount)
+      ctx.lineWidth = 1 + (array[i] / 256 * 5)
       if (array[i] < 50) {
-        distances[i] += (50 * heightMultiplier / 40);
+        distances[i] += (50 * heightMultiplier / 40)
       } else {
-        distances[i] += (array[i] * heightMultiplier / 40);
+        distances[i] += (array[i] * heightMultiplier / 40)
       }
 
       if (distances[i] > (longestSide * 0.71)) {
-        distances[i] = 0;
+        distances[i] = 0
       } else {
-        var hue = (360.0 / bandCount * i) / 360.0;
-        var brightness = constrain(array[i] * 1.0 / 150, 0.3, 1);
-        ctx.strokeStyle = HSVtoRGB(hue, 1, brightness);
-        ctx.beginPath();
-        ctx.arc(0, 0, distances[i], 0, rotateAmount * .75);
-        ctx.stroke();
-        ctx.closePath();
-        var offset = longestSide * .71 / 2;
+        let hue = (360.0 / bandCount * i) / 360.0
+        let brightness = constrain(array[i] * 1.0 / 150, 0.3, 1)
+        ctx.strokeStyle = HSVtoRGB(hue, 1, brightness)
+        ctx.beginPath()
+        ctx.arc(0, 0, distances[i], 0, rotateAmount * .75)
+        ctx.stroke()
+        ctx.closePath()
+        let offset = longestSide * .71 / 2
         if (distances[i] > longestSide * .71 / 2) {
-          offset *= -1;  
+          offset *= -1  
         } 
-        ctx.strokeStyle = HSVtoRGB(hue, 1, brightness);
-        ctx.beginPath();
-        ctx.arc(0, 0, distances[i] + offset, 0, rotateAmount * .75);
-        ctx.stroke();
-        ctx.closePath();
+        ctx.strokeStyle = HSVtoRGB(hue, 1, brightness)
+        ctx.beginPath()
+        ctx.arc(0, 0, distances[i] + offset, 0, rotateAmount * .75)
+        ctx.stroke()
+        ctx.closePath()
       }
     }
-    allRotate += 0.002;
+    allRotate += 0.002
 
     // reset current transformation matrix to the identity matrix
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
   }
 
   let resize = function() {
@@ -417,7 +429,8 @@ module.exports = function vizImage(options={}) {
     if (!imageLoaded) return
 
     ctx.clearRect(0, 0, cv.width, cv.height)
-    ctx.translate(tX, tY)
+    //ctx.translate(tX, tY)
+    ctx.translate(cv.width / 2 - width/2, cv.height / 2 - height /2)
     hueOffset += 1
 
     for (let i = 0; i < greyscaled.length; i++) {
@@ -443,12 +456,12 @@ module.exports = function vizImage(options={}) {
   }
 
   let resize = function() {
-    const sW = Math.floor(window.innerWidth / width)
-    const sH = Math.floor(window.innerHeight / height)
+    const sW = Math.floor(cv.parentElement.innerWidth / width)
+    const sH = Math.floor(cv.parentElement.innerHeight / height)
     scale = Math.min(sW, sH)
     if (scale == 0) { scale = 1 }
-    tX = Math.floor((window.innerWidth - (width * scale)) / 2),
-    tY = Math.floor((window.innerHeight - (height * scale)) / 2)
+    tX = Math.floor((cv.width - (width * scale)) / 2),
+    tY = Math.floor((cv.height - (height * scale)) / 2)
   }
 
   let _generateGreyscaleBuckets = function(image, divisions) {
@@ -457,14 +470,14 @@ module.exports = function vizImage(options={}) {
 
     cv2.width = width
     cv2.height = height
-    let buffer = cv2.getContext("2d")
+    let buffer = cv2.getContext('2d')
     buffer.clearRect(0, 0, width, height)
     buffer.drawImage(image, 0, 0, width, height)
 
     let imageData = buffer.getImageData(0, 0, width, height)
     greyscaled = []
     greyscaled2 = []
-    for (var i = 0; i < divisions; i++) {
+    for (let i = 0; i < divisions; i++) {
       greyscaled2.push([])
     }
 
@@ -480,7 +493,7 @@ module.exports = function vizImage(options={}) {
       // force into 128 buckets (fix me later)
       grey = Math.floor((255 - grey) / 2)
 
-      /*var interval = Math.floor(256 / divisions)
+      /*let interval = Math.floor(256 / divisions)
       grey = (grey - (grey % interval))*/
       greyscaled[j] = grey
       greyscaled2[grey].push([j % width, Math.floor(j / width)])
@@ -544,12 +557,12 @@ module.exports = function vizRadialArcs(options={}) {
     ctx.clearRect(0, 0, cv.width, cv.height)
     ctx.translate(cv.width / 2, cv.height / 2)
     ctx.rotate(allRotate)
-    for (var i = 0; i < bandCount; i++) {
+    for (let i = 0; i < bandCount; i++) {
       ctx.rotate(rotateAmount)
-      var hue = Math.floor(360.0 / bandCount * i)
-      var brightness = 99
+      let hue = Math.floor(360.0 / bandCount * i)
+      let brightness = 99
       if (fade) {
-        var brightness = constrain(Math.floor(spectrum[i] / 1.5), 25, 99)
+        let brightness = constrain(Math.floor(spectrum[i] / 1.5), 25, 99)
       }
       ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness]
 
@@ -600,16 +613,16 @@ module.exports = function vizRadialBars(options={}) {
     ctx.clearRect(0, 0, cv.width, cv.height)
     ctx.translate(cv.width / 2, cv.height / 2)
     ctx.rotate(allRotate)
-    for (var i = 0; i < bandCount; i++) {
+    for (let i = 0; i < bandCount; i++) {
       ctx.rotate(rotateAmount)
-      var hue = Math.floor(360.0 / bandCount * i)
+      let hue = Math.floor(360.0 / bandCount * i)
       if (fade) {
-        var brightness = constrain(Math.floor(spectrum[i] / 1.5), 25, 99)
+        let brightness = constrain(Math.floor(spectrum[i] / 1.5), 25, 99)
         ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness]
         ctx.fillRect(-bandWidth / 2, centerRadius, bandWidth,
           Math.max(2, spectrum[i] * heightMultiplier))
       } else {
-        var avg = 0
+        let avg = 0
         avg = (spectrum[i] + lastVolumes[i]) / 2
         ctx.fillStyle = colorMap.bigColorMap[hue * 100 + 50]
         ctx.fillRect(-bandWidth / 2, centerRadius + avg, bandWidth, 2)
@@ -644,8 +657,8 @@ module.exports = function vizRadialBars(options={}) {
 }
 
 },{"./big-color-map":3,"./constrain":4}],11:[function(require,module,exports){
-var colorMap  = require('./big-color-map')
-var constrain = require('./constrain')
+const colorMap  = require('./big-color-map')
+const constrain = require('./constrain')
 
 
 // spikes coming from off screen
@@ -658,29 +671,29 @@ module.exports = function vizSpikes(options={}) {
   let hueOffset = 0
 
   let draw = function(array) {
-    hueOffset += 1;
-    ctx.clearRect(0, 0, cv.width, cv.height);
-    ctx.translate(cv.width / 2, cv.height / 2);
-    ctx.rotate(Math.PI / 2);
+    hueOffset += 1
+    ctx.clearRect(0, 0, cv.width, cv.height)
+    ctx.translate(cv.width / 2, cv.height / 2)
+    ctx.rotate(Math.PI / 2)
     
-    for (var i = 0; i < bandCount; i++) {
-      var hue = Math.floor(360.0 / bandCount * i + hueOffset) % 360;
-      var brightness = constrain(Math.floor(array[i] / 1.5), 15, 99);
-      ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness];
+    for (let i = 0; i < bandCount; i++) {
+      let hue = Math.floor(360.0 / bandCount * i + hueOffset) % 360
+      let brightness = constrain(Math.floor(array[i] / 1.5), 15, 99)
+      ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness]
 
-      var inner = shortestSide / 2;
-      inner = inner - (inner - centerRadius) * (array[i] / 255);
-      ctx.beginPath();
-      ctx.arc(0, 0, hypotenuse / 2, -rotateAmount / 2, rotateAmount / 2);
-      ctx.lineTo(inner, 0);
-      ctx.fill();
-      ctx.closePath();
-      ctx.rotate(rotateAmount);
+      let inner = shortestSide / 2
+      inner = inner - (inner - centerRadius) * (array[i] / 255)
+      ctx.beginPath()
+      ctx.arc(0, 0, hypotenuse / 2, -rotateAmount / 2, rotateAmount / 2)
+      ctx.lineTo(inner, 0)
+      ctx.fill()
+      ctx.closePath()
+      ctx.rotate(rotateAmount)
     }
-    //allRotate += 0.002;
+    //allRotate += 0.002
 
     // reset current transformation matrix to the identity matrix
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
   }
 
   let resize = function() {
@@ -744,14 +757,14 @@ module.exports = function vizSunburst(options={}) {
   /*
   cv.width = 200
   cv.height = 200
-  ctx = cv.getContext("2d")
+  ctx = cv.getContext('2d')
   ctx.clearRect(0, 0, cv.width, cv.height)
-  var grd = ctx.createRadialGradient(100, 100, 10, 100, 100, 100)
-  grd.addColorStop(0,"#aaaaaa")
-  grd.addColorStop(1,"#000000")
+  let grd = ctx.createRadialGradient(100, 100, 10, 100, 100, 100)
+  grd.addColorStop(0,'#aaaaaa')
+  grd.addColorStop(1,'#000000')
   ctx.fillStyle = grd
   ctx.fillRect(0, 0, 200, 200)
-  var src = cv.toDataURL()
+  let src = cv.toDataURL()
   particleImage = new Image()
   particleImage.src = src
   */
@@ -759,18 +772,18 @@ module.exports = function vizSunburst(options={}) {
   texture(particleImage)
   
   let particles = []
-  for (var i = 0; i < 25; i++) {
+  for (let i = 0; i < 25; i++) {
     particles.push(new Particle())
   }
 
   let draw = function(array) {
-    ctx.fillStyle = "#000000"
+    ctx.fillStyle = '#000000'
     ctx.fillRect(0, 0, cv.width, cv.height)
     ctx.translate(cv.width / 2, cv.height / 2)
     
     if (clouds) {
-      ctx.globalCompositeOperation = "screen"
-      for (var i = 0; i < particles.length; i++) {
+      ctx.globalCompositeOperation = 'screen'
+      for (let i = 0; i < particles.length; i++) {
         ctx.globalAlpha = particles[i].intensity
         ctx.drawImage(particleImage, particles[i].x,
           particles[i].y)
@@ -780,14 +793,14 @@ module.exports = function vizSunburst(options={}) {
     
     ctx.rotate(allRotate)
     if (clouds) {
-      ctx.globalCompositeOperation = "multiply"
+      ctx.globalCompositeOperation = 'multiply'
       ctx.globalAlpha = 1.0
     }
     
     for (let i = 0; i < bandCount; i++) {
       ctx.rotate(rotateAmount)
-      var hue = Math.floor(360.0 / bandCount * i) % 360
-      var brightness = constrain(Math.floor(array[i] / 2), 10, 99)
+      let hue = Math.floor(360.0 / bandCount * i) % 360
+      let brightness = constrain(Math.floor(array[i] / 2), 10, 99)
       ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness]
       ctx.beginPath()
       ctx.arc(0, 0, longestSide * 1.5, 0, rotateAmount + 0.1)

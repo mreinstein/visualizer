@@ -12,14 +12,21 @@ const vizImage      = require('./lib/vizImage')
 
 module.exports = function visualizer(options={}) {
 
-  const parentEl = options.parentEl || window
-  const cv = options.canvas
-  const ctx = cv.getContext('2d')
-  cv.width = window.innerWidth
-  cv.height = window.innerHeight
+  const parent = options.parent ? document.querySelector(options.parent) : window
+  const cv = document.createElement('canvas')
+  if (!options.parent) {
+    cv.style.position = 'absolute'
+    cv.style.left = '0'
+    cv.style.top = '0'
+    document.body.appendChild(cv)
+  }
+  else {
+    parent.appendChild(cv)
+  }
 
+  const ctx = cv.getContext('2d')
+  
   const image = options.image
-  // TODO: support passing in mediaStream instead of instantiating each time
 
   const visualizers = []
 
@@ -43,7 +50,6 @@ module.exports = function visualizer(options={}) {
         callback(null, stream)
       })
       .catch(function(e) {
-        console.log('what happened', e)
         callback(e)
       })
   }
@@ -108,8 +114,15 @@ module.exports = function visualizer(options={}) {
   }
 
   let _recalculateSizes = function() {
-    cv.width = parentEl.innerWidth
-    cv.height = parentEl.innerHeight
+    const ratio = window.devicePixelRatio || 1
+
+    const w = parent.innerWidth || parent.clientWidth
+    const h = parent.innerHeight || parent.clientHeight
+
+    cv.width = w * ratio
+    cv.height = h * ratio
+    cv.style.width = w + 'px'
+    cv.style.height = h + 'px'
     visualizers[currentViz].resize()
   }
 
@@ -138,9 +151,9 @@ module.exports = function visualizer(options={}) {
   _getMediaStream(function(err, stream) {
     if(err) {
       console.log(err)
-      throw new Error("Unable to start visualization. Make sure you're using Chrome or " +
-        "Firefox with a microphone set up, and that you allow the page to access" +
-        " the microphone.")
+      throw new Error('Unable to start visualization. Make sure you\'re using Chrome or ' +
+        'Firefox with a microphone set up, and that you allow the page to access' +
+        ' the microphone.')
     }
     _init(stream)
   })
