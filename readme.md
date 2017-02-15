@@ -9,6 +9,29 @@ A HTML5 audio visualizer for microphone or line-in input.
 A browser with `canvas` and `getUserMedia` support. (Currently Chrome, Firefox, Edge, and Opera)
 
 
+## Configuration
+
+Several parameters are supported when creating a visualizer instance. These are all optional.
+
+```javascript
+
+var options = {
+  // string indicating which container element should hold the visualization.
+  // If specified it will stretch to fit this container's width and height.
+  // If omitted it will assume a full screen visualization and fit to the window
+  parent: '#my-container-div',
+
+  // specify the image that is used by the vizImage visualization
+  image: 'my-image.png',
+
+  // in some cases you may already have a media stream. You can pass it in to
+  // the visualizer. If omitted it will create a new media stream
+  stream: mediaStream
+}
+
+var viz = visualizer(options)
+```
+
 ## Running the examples
 
 visualizer uses the `getUserMedia` HTML5 API. Using this feaure prevents running the HTML page directly from disk,
