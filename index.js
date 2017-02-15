@@ -99,10 +99,10 @@ module.exports = function visualizer(options={}) {
   }
 
   let showVisualization = function(idx) {
-    currentViz = idx
-
     if (idx < 0) idx = 0
     if (idx >= visualizers.length) idx = visualizers.length - 1
+
+    currentViz = idx
     _recalculateSizes()
   }
 
