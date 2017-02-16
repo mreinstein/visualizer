@@ -35,7 +35,7 @@ module.exports = function visualizer() {
   var currentViz = 0;
 
   // for audio processing
-  var analyseInterval = 1000 / 30;
+  //let analyseInterval = 1000 / 30
   var fftSize = 256;
 
   // although the actual spectrum size is half the FFT size,
@@ -140,7 +140,7 @@ module.exports = function visualizer() {
     analyser.getByteFrequencyData(spectrum);
 
     // dampen falloff for some visualizations
-    if (visualizers[currentViz].dampen == true) {
+    if (visualizers[currentViz].dampen === true) {
       for (var i = 0; i < spectrum.length; i++) {
         if (lastVolumes[i] > spectrum[i]) {
           spectrum[i] = (spectrum[i] + lastVolumes[i]) / 2;
@@ -174,9 +174,7 @@ var constrain = require('./constrain');
 module.exports = function vizBoxes() {
   var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
   var ctx = options.ctx,
-      cv = options.cv,
-      bandCount = options.bandCount,
-      rotateAmount = options.rotateAmount;
+      cv = options.cv;
 
   var dampen = true;
   var variant = 0;
@@ -321,7 +319,7 @@ module.exports = function textureImage(image) {
 // http://stackoverflow.com/a/5624139
 function componentToHex(c) {
   var hex = c.toString(16);
-  return hex.length == 1 ? "0" + hex : hex;
+  return hex.length === 1 ? "0" + hex : hex;
 }
 
 // http://stackoverflow.com/a/17243070
@@ -385,8 +383,14 @@ module.exports = function vizFlyout() {
 
   var dampen = false;
   var allRotate = 0;
+  var variant = 0;
   var longestSide = void 0,
-      heightMultiplier = void 0;
+      heightMultiplier = void 0,
+      bars = void 0,
+      offset = void 0,
+      maxDistance = void 0;
+
+  var variants = [[2], [3]];
 
   var distances = [];
   for (var i = 0; i < bandCount; i++) {
@@ -394,53 +398,53 @@ module.exports = function vizFlyout() {
   }
 
   var draw = function draw(spectrum) {
+    ctx.save();
     ctx.clearRect(0, 0, cv.width, cv.height);
     ctx.translate(cv.width / 2, cv.height / 2);
     ctx.rotate(allRotate);
     for (var _i = 0; _i < bandCount; _i++) {
       ctx.rotate(rotateAmount);
       ctx.lineWidth = 1 + spectrum[_i] / 256 * 5;
-      if (spectrum[_i] < 50) {
-        distances[_i] += 50 * heightMultiplier / 40;
-      } else {
-        distances[_i] += spectrum[_i] * heightMultiplier / 40;
-      }
 
-      if (distances[_i] > longestSide * 0.71) {
-        distances[_i] = 0;
-      } else {
-        var hue = 360.0 / bandCount * _i / 360.0;
-        var brightness = constrain(spectrum[_i] * 1.0 / 150, 0.3, 1);
-        ctx.strokeStyle = HSVtoRGB(hue, 1, brightness);
-        ctx.beginPath();
-        ctx.arc(0, 0, distances[_i], 0, rotateAmount * .75);
-        ctx.stroke();
-        ctx.closePath();
-        var offset = longestSide * .71 / 2;
-        if (distances[_i] > longestSide * .71 / 2) {
-          offset *= -1;
-        }
-        ctx.strokeStyle = HSVtoRGB(hue, 1, brightness);
-        ctx.beginPath();
-        ctx.arc(0, 0, distances[_i] + offset, 0, rotateAmount * .75);
-        ctx.stroke();
-        ctx.closePath();
+      var hue = 360.0 / bandCount * _i / 360.0;
+      var brightness = constrain(spectrum[_i] * 1.0 / 150, 0.3, 1);
+      ctx.strokeStyle = HSVtoRGB(hue, 1, brightness);
+
+      distances[_i] += Math.max(50, spectrum[_i]) * heightMultiplier / 40;
+      distances[_i] %= offset;
+      for (var j = 0; j < bars; j++) {
+        _arc(distances[_i] + j * offset, rotateAmount * .75);
       }
     }
     allRotate += 0.002;
 
-    // reset current transformation matrix to the identity matrix
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.restore();
   };
 
   var resize = function resize() {
     var shortestSide = Math.min(cv.width, cv.height);
     longestSide = Math.max(cv.width, cv.height);
-    var hypotenuse = Math.sqrt(cv.width * cv.width + cv.height * cv.height);
     heightMultiplier = 1.0 / 800 * shortestSide;
+
+    maxDistance = longestSide * 0.71;
+    offset = maxDistance / bars;
   };
 
-  return Object.freeze({ dampen: dampen, resize: resize, draw: draw });
+  var vary = function vary() {
+    variant = (variant + 1) % variants.length;
+    bars = variants[variant][0];
+  };
+
+  var _arc = function _arc(distance, angle) {
+    ctx.beginPath();
+    ctx.arc(0, 0, distance, 0, angle);
+    ctx.stroke();
+    ctx.closePath();
+  };
+
+  vary();
+
+  return Object.freeze({ dampen: dampen, resize: resize, draw: draw, vary: vary });
 };
 
 },{"./constrain":4,"./hsv-to-rgb":6}],8:[function(require,module,exports){
@@ -455,9 +459,9 @@ module.exports = function vizImage() {
   var ctx = options.ctx,
       cv = options.cv,
       bandCount = options.bandCount,
-      rotateAmount = options.rotateAmount,
       image = options.image,
       fftSize = options.fftSize;
+
 
   var dampen = true;
 
@@ -476,19 +480,13 @@ module.exports = function vizImage() {
 
   var hueOffset = 0;
 
-  ctx.mozImageSmoothingEnabled = false;
-  ctx.webkitImageSmoothingEnabled = false;
-  ctx.msImageSmoothingEnabled = false;
-  ctx.imageSmoothingEnabled = false;
-
   var draw = function draw(spectrum) {
     // if the image hasn't loaded yet, don't render the visualization
     if (!bufferImgData) return;
 
     ctx.save();
     ctx.clearRect(0, 0, cv.width, cv.height);
-    //ctx.translate(tX, tY)
-    ctx.translate(cv.width / 2 - width / 2, cv.height / 2 - height / 2);
+    ctx.translate(tX, tY);
     hueOffset += 1;
 
     for (var i = 0; i < greyscaled.length; i++) {
@@ -513,13 +511,26 @@ module.exports = function vizImage() {
     bufferCv.width = width;
     bufferCv.height = height;
 
-    var sW = Math.floor(cv.parentElement.innerWidth / width);
-    var sH = Math.floor(cv.parentElement.innerHeight / height);
+    var w = cv.parentElement.innerWidth || cv.parentElement.clientWidth;
+    var h = cv.parentElement.innerHeight || cv.parentElement.clientHeight;
+
+    var sW = Math.floor(w / width);
+    var sH = Math.floor(h / height);
     scale = Math.min(sW, sH);
-    if (scale == 0) {
+
+    if (scale === 0) {
       scale = 1;
     }
-    tX = Math.floor((cv.width - width * scale) / 2), tY = Math.floor((cv.height - height * scale) / 2);
+
+    scale *= window.devicePixelRatio || 1;
+
+    tX = Math.floor((cv.width - width * scale) / 2);
+    tY = Math.floor((cv.height - height * scale) / 2);
+
+    ctx.mozImageSmoothingEnabled = false;
+    ctx.webkitImageSmoothingEnabled = false;
+    ctx.msImageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = false;
   };
 
   var _generateGreyscaleBuckets = function _generateGreyscaleBuckets(image) {
@@ -597,8 +608,6 @@ module.exports = function vizRadialArcs() {
 
   var resize = function resize() {
     var shortestSide = Math.min(cv.width, cv.height);
-    var longestSide = Math.max(cv.width, cv.height);
-    var hypotenuse = Math.sqrt(cv.width * cv.width + cv.height * cv.height);
     centerRadius = 85.0 / 800 * shortestSide;
     heightMultiplier = 1.0 / 800 * shortestSide;
   };
@@ -613,7 +622,7 @@ module.exports = function vizRadialArcs() {
       var hue = Math.floor(360.0 / bandCount * i);
       var brightness = 99;
       if (fade) {
-        var _brightness = constrain(Math.floor(spectrum[i] / 1.5), 25, 99);
+        brightness = constrain(Math.floor(spectrum[i] / 1.5), 25, 99);
       }
       ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness];
 
@@ -701,8 +710,6 @@ module.exports = function vizRadialBars() {
 
   var resize = function resize() {
     var shortestSide = Math.min(cv.width, cv.height);
-    var longestSide = Math.max(cv.width, cv.height);
-    var hypotenuse = Math.sqrt(cv.width * cv.width + cv.height * cv.height);
     centerRadius = 85.0 / 800 * shortestSide;
     heightMultiplier = 1.0 / 800 * shortestSide;
     bandWidth = Math.PI * 2 * centerRadius / bandCount;
@@ -820,26 +827,12 @@ module.exports = function vizSunburst() {
 
   var dampen = true;
   var variant = 0;
-  var variants = [[true], [false]];
+  var variants = [true, false];
 
   var allRotate = 0;
   var clouds = void 0,
       longestSide = void 0;
 
-  /*
-  cv.width = 200
-  cv.height = 200
-  ctx = cv.getContext('2d')
-  ctx.clearRect(0, 0, cv.width, cv.height)
-  let grd = ctx.createRadialGradient(100, 100, 10, 100, 100, 100)
-  grd.addColorStop(0,'#aaaaaa')
-  grd.addColorStop(1,'#000000')
-  ctx.fillStyle = grd
-  ctx.fillRect(0, 0, 200, 200)
-  let src = cv.toDataURL()
-  particleImage = new Image()
-  particleImage.src = src
-  */
   var particleImage = document.createElement('img');
   texture(particleImage);
 
@@ -849,6 +842,8 @@ module.exports = function vizSunburst() {
   }
 
   var draw = function draw(spectrum) {
+    ctx.save();
+
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, cv.width, cv.height);
     ctx.translate(cv.width / 2, cv.height / 2);
@@ -881,8 +876,7 @@ module.exports = function vizSunburst() {
     }
     allRotate += 0.002;
 
-    // reset current transformation matrix to the identity matrix
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.restore();
   };
 
   var resize = function resize() {
@@ -891,17 +885,7 @@ module.exports = function vizSunburst() {
 
   var vary = function vary() {
     variant = (variant + 1) % variants.length;
-
-    // Newer versions of firefox don't seem to suffer from this performance degration.
-    // disabling for now, but can be re-enabled in a pinch
-    /*
-    // blending is horrifically slow on Firefox, so skip that variant
-    if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
-      variant = 1
-    }
-    */
-
-    clouds = variants[variant][0];
+    clouds = variants[variant];
   };
 
   vary();

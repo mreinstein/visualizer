@@ -33,7 +33,7 @@ module.exports = function visualizer(options={}) {
   let currentViz = 0
 
   // for audio processing
-  let analyseInterval = 1000 / 30
+  //let analyseInterval = 1000 / 30
   const fftSize = 256
  
   // although the actual spectrum size is half the FFT size,
@@ -139,7 +139,7 @@ module.exports = function visualizer(options={}) {
     analyser.getByteFrequencyData(spectrum)
 
     // dampen falloff for some visualizations
-    if (visualizers[currentViz].dampen == true) {
+    if (visualizers[currentViz].dampen === true) {
       for (let i = 0; i < spectrum.length; i++) {
         if (lastVolumes[i] > spectrum[i]) {
           spectrum[i] = (spectrum[i] + lastVolumes[i]) / 2
