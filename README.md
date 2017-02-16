@@ -15,6 +15,8 @@ Several parameters are supported when creating a visualizer instance. These are 
 
 ```javascript
 
+var visualizer = require('visualizer.js')
+
 var options = {
   // string indicating which container element should hold the visualization.
   // If specified it will stretch to fit this container's width and height.
@@ -40,9 +42,6 @@ You'll be prompted to allow microphone access. Upon accepting, the visualization
 
 * Press number keys `1` - `7` to select a visualization.
 * Press `+`/`=` key to switch between variants of that visualization. Some visualizations don't have a variant.
-
-On OS X you can use [Soundflower](http://rogueamoeba.com/freebies/soundflower/) to redirect system audio, and 
-on Windows you can use [VB Cable](http://vb-audio.pagesperso-orange.fr/Cable/).
 
 
 ## Using as a standard javascript include
