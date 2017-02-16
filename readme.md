@@ -34,19 +34,7 @@ var viz = visualizer(options)
 
 ## Running the examples
 
-visualizer uses the `getUserMedia` HTML5 API. Using this feaure prevents running the HTML page directly from disk,
-and must be run from a web server, even though it is completely static. 
-
-You can use any existing web server software to host the `visualizer/` directory, or you can use node and npm by 
-running these steps:
-
-```bash
-cd visualizer
-npm install
-npm run start-dev
-```
-
-Either way, you can now open http://localhost:3000/examples in a supported web browser.
+open any of the index files in the `examples/` directory.
 
 You'll be prompted to allow microphone access. Upon accepting, the visualizations will start playing.
 

@@ -33,6 +33,13 @@ module.exports = function visualizer(options={}) {
   let currentViz = 0
 
   // for audio processing
+  let analyseInterval = 1000 / 30
+  const fftSize = 256
+ 
+  // although the actual spectrum size is half the FFT size,
+  // the highest frequencies aren't really important here
+  const bandCount = Math.round(fftSize / 3)
+
   let analyser, spectrum
 
   const lastVolumes = []
@@ -65,8 +72,8 @@ module.exports = function visualizer(options={}) {
 
     // set node properties and connect
     analyser.smoothingTimeConstant = 0.2
-    analyser.fftSize = 256
-    const bandCount = Math.round(analyser.fftSize / 3)
+    analyser.fftSize = fftSize
+
     spectrum = new Uint8Array(analyser.frequencyBinCount)
     source.connect(analyser)
 
@@ -76,7 +83,7 @@ module.exports = function visualizer(options={}) {
     const rotateAmount = (Math.PI * 2.0) / bandCount
 
     // set up visualizer list
-    const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image }
+    const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image, fftSize }
     visualizers.push(vizRadialArcs(options))
     visualizers.push(vizRadialBars(options))
     visualizers.push(vizFlyout(options))
@@ -129,23 +136,20 @@ module.exports = function visualizer(options={}) {
 
   // called each audio frame, manages rendering of visualization
   let _visualize = function() {
-    const fpsInterval = 1000 / 45
+    analyser.getByteFrequencyData(spectrum)
 
-    setTimeout(function() {
-      raf(_visualize)
-      analyser.getByteFrequencyData(spectrum)
-
-      // dampen falloff
-      if (visualizers[currentViz].dampen == true) {
-        for (let i = 0; i < spectrum.length; i++) {
-          if (lastVolumes[i] > spectrum[i]) {
-            spectrum[i] = (spectrum[i] + lastVolumes[i]) / 2
-          }
+    // dampen falloff for some visualizations
+    if (visualizers[currentViz].dampen == true) {
+      for (let i = 0; i < spectrum.length; i++) {
+        if (lastVolumes[i] > spectrum[i]) {
+          spectrum[i] = (spectrum[i] + lastVolumes[i]) / 2
         }
       }
+    }
 
-      visualizers[currentViz].draw(spectrum)
-    }, fpsInterval)
+    visualizers[currentViz].draw(spectrum)
+
+    raf(_visualize)
   }
 
   _getMediaStream(function(err, stream) {

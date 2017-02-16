@@ -5,9 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "browserify index.js --standalone visualizer -t [ babelify --presets [ es2015 ] ] --outfile visualizer.browser.js && npm run compress",
-    "build-dev": "browserify index.js --standalone visualizer --outfile visualizer.browser.js",
     "compress": "uglifyjs -c dead_code,unused visualizer.browser.js > visualizer.browser.min.js",
-    "start-dev": "serve . & npm run watch",
     "watch": "watchify index.js -v -o visualizer.browser.js --verbose --standalone visualizer"
   },
   "repository": {
@@ -20,7 +18,6 @@
     "babel-preset-es2015": "^6.22.0",
     "babelify": "^7.3.0",
     "browserify": "^14.0.0",
-    "serve": "^3.3.0",
     "uglify-js": "^2.7.5",
     "watchify": "^3.9.0"
   },
