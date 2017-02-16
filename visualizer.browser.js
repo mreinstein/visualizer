@@ -47,6 +47,8 @@ module.exports = function visualizer() {
 
   var lastVolumes = [];
 
+  var rotateAmount = Math.PI * 2.0 / bandCount;
+
   // sets up mic/line-in input
   var _getMediaStream = function _getMediaStream(callback) {
     if (options.stream) {
@@ -82,8 +84,6 @@ module.exports = function visualizer() {
       lastVolumes.push(0);
     }
 
-    var rotateAmount = Math.PI * 2.0 / bandCount;
-
     // set up visualizer list
     var options = { cv: cv, ctx: ctx, bandCount: bandCount, rotateAmount: rotateAmount, lastVolumes: lastVolumes, image: image, fftSize: fftSize };
     visualizers.push(vizRadialArcs(options));
@@ -100,6 +100,12 @@ module.exports = function visualizer() {
     window.onresize = function () {
       _recalculateSizes();
     };
+  };
+
+  // add a new visualizer module
+  var addVisualizer = function addVisualizer(viz) {
+    var options = { cv: cv, ctx: ctx, bandCount: bandCount, rotateAmount: rotateAmount, lastVolumes: lastVolumes, image: image, fftSize: fftSize };
+    visualizers.push(viz(options));
   };
 
   var showNextVisualization = function showNextVisualization() {
@@ -161,7 +167,7 @@ module.exports = function visualizer() {
     _init(stream);
   });
 
-  return Object.freeze({ showNextVisualization: showNextVisualization, showVisualization: showVisualization, vary: vary });
+  return Object.freeze({ addVisualizer: addVisualizer, showNextVisualization: showNextVisualization, showVisualization: showVisualization, vary: vary });
 };
 
 },{"./lib/VizBoxes":2,"./lib/vizFlyout":7,"./lib/vizImage":8,"./lib/vizRadialArcs":9,"./lib/vizRadialBars":10,"./lib/vizSpikes":11,"./lib/vizSunburst":12,"get-user-media-promise":13,"raf":16}],2:[function(require,module,exports){

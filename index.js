@@ -44,6 +44,8 @@ module.exports = function visualizer(options={}) {
 
   const lastVolumes = []
 
+  const rotateAmount = (Math.PI * 2.0) / bandCount
+
   // sets up mic/line-in input
   let _getMediaStream = function(callback) {
     if (options.stream) {
@@ -80,8 +82,6 @@ module.exports = function visualizer(options={}) {
     // misc setup
     for (let i = 0; i < bandCount; i++) { lastVolumes.push(0) }
 
-    const rotateAmount = (Math.PI * 2.0) / bandCount
-
     // set up visualizer list
     const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image, fftSize }
     visualizers.push(vizRadialArcs(options))
@@ -98,6 +98,12 @@ module.exports = function visualizer(options={}) {
     window.onresize = function() {
       _recalculateSizes()
     }
+  }
+
+  // add a new visualizer module
+  let addVisualization = function(viz) {
+    const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image, fftSize }
+    visualizers.push(viz(options))
   }
 
   let showNextVisualization = function() {
@@ -162,5 +168,5 @@ module.exports = function visualizer(options={}) {
     _init(stream)
   })
 
-  return Object.freeze({ showNextVisualization, showVisualization, vary })
+  return Object.freeze({ addVisualization, showNextVisualization, showVisualization, vary })
 }

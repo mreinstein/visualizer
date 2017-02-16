@@ -53,3 +53,17 @@ see `examples/browser-global/`
 
 see `examples/browserify/`
 
+
+## generating your own visualizations
+
+The `visualizer` module is pluggable; you can write your own visualizations as long as they conform to the
+expected interface. Look at any of the modules written in `lib/viz*` to see how this is done.
+
+```javascript
+var visualizer = require('visualizer.js')
+
+var viz = visualizer()
+
+viz.addVisualization(require('./some-visualizer-i-wrote'))
+```
+
