@@ -5,7 +5,7 @@ const vizRadialArcs = require('./lib/vizRadialArcs')
 const vizRadialBars = require('./lib/vizRadialBars')
 const vizFlyout     = require('./lib/vizFlyout')
 const vizSunburst   = require('./lib/vizSunburst')
-const vizBoxes      = require('./lib/VizBoxes')
+const vizBoxes      = require('./lib/vizBoxes')
 const vizSpikes     = require('./lib/vizSpikes')
 const vizImage      = require('./lib/vizImage')
 

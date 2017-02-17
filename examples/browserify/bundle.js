@@ -222,7 +222,7 @@ var vizRadialArcs = require('./lib/vizRadialArcs');
 var vizRadialBars = require('./lib/vizRadialBars');
 var vizFlyout = require('./lib/vizFlyout');
 var vizSunburst = require('./lib/vizSunburst');
-var vizBoxes = require('./lib/VizBoxes');
+var vizBoxes = require('./lib/vizBoxes');
 var vizSpikes = require('./lib/vizSpikes');
 var vizImage = require('./lib/vizImage');
 
@@ -318,7 +318,7 @@ module.exports = function visualizer() {
   };
 
   // add a new visualizer module
-  var addVisualizer = function addVisualizer(viz) {
+  var addVisualization = function addVisualization(viz) {
     var options = { cv: cv, ctx: ctx, bandCount: bandCount, rotateAmount: rotateAmount, lastVolumes: lastVolumes, image: image, fftSize: fftSize };
     visualizers.push(viz(options));
   };
@@ -382,10 +382,127 @@ module.exports = function visualizer() {
     _init(stream);
   });
 
-  return Object.freeze({ addVisualizer: addVisualizer, showNextVisualization: showNextVisualization, showVisualization: showVisualization, vary: vary });
+  return Object.freeze({ addVisualization: addVisualization, showNextVisualization: showNextVisualization, showVisualization: showVisualization, vary: vary });
 };
 
-},{"./lib/VizBoxes":4,"./lib/vizFlyout":9,"./lib/vizImage":10,"./lib/vizRadialArcs":11,"./lib/vizRadialBars":12,"./lib/vizSpikes":13,"./lib/vizSunburst":14,"get-user-media-promise":15,"raf":17}],4:[function(require,module,exports){
+},{"./lib/vizBoxes":8,"./lib/vizFlyout":9,"./lib/vizImage":10,"./lib/vizRadialArcs":11,"./lib/vizRadialBars":12,"./lib/vizSpikes":13,"./lib/vizSunburst":14,"get-user-media-promise":15,"raf":17}],4:[function(require,module,exports){
+'use strict';
+
+var HSVtoRGB = require('./hsv-to-rgb');
+
+var bigColorMap = [];
+var bigColorMap2 = [];
+
+function generateColors() {
+  for (var hue = 0; hue < 360; hue++) {
+    for (var brightness = 0; brightness < 100; brightness++) {
+      var color = HSVtoRGB(hue / 360, 1, brightness / 100, true, false);
+      bigColorMap.push(color);
+      var color2 = HSVtoRGB(hue / 360, 1, brightness / 100, false, true);
+      bigColorMap2.push(color2);
+    }
+  }
+}
+
+generateColors();
+
+module.exports = {
+  bigColorMap: bigColorMap,
+  bigColorMap2: bigColorMap2
+};
+
+},{"./hsv-to-rgb":7}],5:[function(require,module,exports){
+"use strict";
+
+module.exports = function constrain(input, min, max) {
+  if (input < min) {
+    input = min;
+  } else if (input > max) {
+    input = max;
+  }
+  return input;
+};
+
+},{}],6:[function(require,module,exports){
+'use strict';
+
+module.exports = function textureImage(image) {
+
+    var canvas = document.createElement('canvas'),
+        ctx = canvas.getContext('2d'),
+        grd = void 0;
+
+    canvas.width = 300;
+    canvas.height = 300;
+
+    // Create gradient
+    grd = ctx.createRadialGradient(150.000, 150.000, 0.000, 150.000, 150.000, 150.000);
+
+    // Add colors
+    grd.addColorStop(0.000, 'rgba(255, 255, 255, 1.000)');
+    grd.addColorStop(1.000, 'rgba(255, 255, 255, 0.000)');
+
+    // Fill with gradient
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, 300.000, 300.000);
+
+    image.src = canvas.toDataURL();
+};
+
+},{}],7:[function(require,module,exports){
+'use strict';
+
+// http://stackoverflow.com/a/5624139
+function componentToHex(c) {
+  var hex = c.toString(16);
+  return hex.length === 1 ? "0" + hex : hex;
+}
+
+// http://stackoverflow.com/a/17243070
+module.exports = function HSVtoRGB(h, s, v, hex, separate) {
+  var r = void 0,
+      g = void 0,
+      b = void 0,
+      i = void 0,
+      f = void 0,
+      p = void 0,
+      q = void 0,
+      t = void 0;
+  if (h && s === undefined && v === undefined) {
+    s = h.s, v = h.v, h = h.h;
+  }
+  i = Math.floor(h * 6);
+  f = h * 6 - i;
+  p = v * (1 - s);
+  q = v * (1 - f * s);
+  t = v * (1 - (1 - f) * s);
+  switch (i % 6) {
+    case 0:
+      r = v, g = t, b = p;break;
+    case 1:
+      r = q, g = v, b = p;break;
+    case 2:
+      r = p, g = v, b = t;break;
+    case 3:
+      r = p, g = q, b = v;break;
+    case 4:
+      r = t, g = p, b = v;break;
+    case 5:
+      r = v, g = p, b = q;break;
+  }
+  r = Math.floor(r * 255);
+  g = Math.floor(g * 255);
+  b = Math.floor(b * 255);
+  if (hex) {
+    return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b);
+  } else if (separate) {
+    return [r, g, b];
+  } else {
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
+};
+
+},{}],8:[function(require,module,exports){
 'use strict';
 
 var colorMap = require('./big-color-map');
@@ -470,124 +587,7 @@ module.exports = function vizBoxes() {
   return Object.freeze({ dampen: dampen, vary: vary, resize: resize, draw: draw });
 };
 
-},{"./big-color-map":5,"./constrain":6}],5:[function(require,module,exports){
-'use strict';
-
-var HSVtoRGB = require('./hsv-to-rgb');
-
-var bigColorMap = [];
-var bigColorMap2 = [];
-
-function generateColors() {
-  for (var hue = 0; hue < 360; hue++) {
-    for (var brightness = 0; brightness < 100; brightness++) {
-      var color = HSVtoRGB(hue / 360, 1, brightness / 100, true, false);
-      bigColorMap.push(color);
-      var color2 = HSVtoRGB(hue / 360, 1, brightness / 100, false, true);
-      bigColorMap2.push(color2);
-    }
-  }
-}
-
-generateColors();
-
-module.exports = {
-  bigColorMap: bigColorMap,
-  bigColorMap2: bigColorMap2
-};
-
-},{"./hsv-to-rgb":8}],6:[function(require,module,exports){
-"use strict";
-
-module.exports = function constrain(input, min, max) {
-  if (input < min) {
-    input = min;
-  } else if (input > max) {
-    input = max;
-  }
-  return input;
-};
-
-},{}],7:[function(require,module,exports){
-'use strict';
-
-module.exports = function textureImage(image) {
-
-    var canvas = document.createElement('canvas'),
-        ctx = canvas.getContext('2d'),
-        grd = void 0;
-
-    canvas.width = 300;
-    canvas.height = 300;
-
-    // Create gradient
-    grd = ctx.createRadialGradient(150.000, 150.000, 0.000, 150.000, 150.000, 150.000);
-
-    // Add colors
-    grd.addColorStop(0.000, 'rgba(255, 255, 255, 1.000)');
-    grd.addColorStop(1.000, 'rgba(255, 255, 255, 0.000)');
-
-    // Fill with gradient
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, 300.000, 300.000);
-
-    image.src = canvas.toDataURL();
-};
-
-},{}],8:[function(require,module,exports){
-'use strict';
-
-// http://stackoverflow.com/a/5624139
-function componentToHex(c) {
-  var hex = c.toString(16);
-  return hex.length === 1 ? "0" + hex : hex;
-}
-
-// http://stackoverflow.com/a/17243070
-module.exports = function HSVtoRGB(h, s, v, hex, separate) {
-  var r = void 0,
-      g = void 0,
-      b = void 0,
-      i = void 0,
-      f = void 0,
-      p = void 0,
-      q = void 0,
-      t = void 0;
-  if (h && s === undefined && v === undefined) {
-    s = h.s, v = h.v, h = h.h;
-  }
-  i = Math.floor(h * 6);
-  f = h * 6 - i;
-  p = v * (1 - s);
-  q = v * (1 - f * s);
-  t = v * (1 - (1 - f) * s);
-  switch (i % 6) {
-    case 0:
-      r = v, g = t, b = p;break;
-    case 1:
-      r = q, g = v, b = p;break;
-    case 2:
-      r = p, g = v, b = t;break;
-    case 3:
-      r = p, g = q, b = v;break;
-    case 4:
-      r = t, g = p, b = v;break;
-    case 5:
-      r = v, g = p, b = q;break;
-  }
-  r = Math.floor(r * 255);
-  g = Math.floor(g * 255);
-  b = Math.floor(b * 255);
-  if (hex) {
-    return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b);
-  } else if (separate) {
-    return [r, g, b];
-  } else {
-    return 'rgb(' + r + ',' + g + ',' + b + ')';
-  }
-};
-
-},{}],9:[function(require,module,exports){
+},{"./big-color-map":4,"./constrain":5}],9:[function(require,module,exports){
 'use strict';
 
 var constrain = require('./constrain');
@@ -668,7 +668,7 @@ module.exports = function vizFlyout() {
   return Object.freeze({ dampen: dampen, resize: resize, draw: draw, vary: vary });
 };
 
-},{"./constrain":6,"./hsv-to-rgb":8}],10:[function(require,module,exports){
+},{"./constrain":5,"./hsv-to-rgb":7}],10:[function(require,module,exports){
 'use strict';
 
 var colorMap = require('./big-color-map');
@@ -795,7 +795,7 @@ module.exports = function vizImage() {
   return Object.freeze({ dampen: dampen, resize: resize, draw: draw });
 };
 
-},{"./big-color-map":5,"./constrain":6}],11:[function(require,module,exports){
+},{"./big-color-map":4,"./constrain":5}],11:[function(require,module,exports){
 'use strict';
 
 var colorMap = require('./big-color-map');
@@ -873,7 +873,7 @@ module.exports = function vizRadialArcs() {
   return Object.freeze({ dampen: dampen, vary: vary, resize: resize, draw: draw });
 };
 
-},{"./big-color-map":5,"./constrain":6}],12:[function(require,module,exports){
+},{"./big-color-map":4,"./constrain":5}],12:[function(require,module,exports){
 'use strict';
 
 var colorMap = require('./big-color-map');
@@ -941,7 +941,7 @@ module.exports = function vizRadialBars() {
   return Object.freeze({ dampen: dampen, vary: vary, resize: resize, draw: draw });
 };
 
-},{"./big-color-map":5,"./constrain":6}],13:[function(require,module,exports){
+},{"./big-color-map":4,"./constrain":5}],13:[function(require,module,exports){
 'use strict';
 
 var colorMap = require('./big-color-map');
@@ -998,7 +998,7 @@ module.exports = function vizSpikes() {
   return Object.freeze({ dampen: dampen, resize: resize, draw: draw });
 };
 
-},{"./big-color-map":5,"./constrain":6}],14:[function(require,module,exports){
+},{"./big-color-map":4,"./constrain":5}],14:[function(require,module,exports){
 'use strict';
 
 var colorMap = require('./big-color-map');
@@ -1114,7 +1114,7 @@ module.exports = function vizSunburst() {
   return Object.freeze({ dampen: dampen, vary: vary, resize: resize, draw: draw });
 };
 
-},{"./big-color-map":5,"./constrain":6,"./create-gradient-texture":7}],15:[function(require,module,exports){
+},{"./big-color-map":4,"./constrain":5,"./create-gradient-texture":6}],15:[function(require,module,exports){
 // loosely based on example code at https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
 (function (root) {
   'use strict';
