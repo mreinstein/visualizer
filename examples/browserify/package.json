@@ -4,10 +4,13 @@
   "description": "shows how to use the visualizer with browserify",
   "main": "index.js",
   "scripts": {
-    "build": "browserify index.js -t [ babelify --presets [ es2015 ] ] --outfile bundle.js"
+    "build": "browserify index.js --outfile bundle.js"
   },
   "author": "",
   "license": "MIT",
+  "browserify": {
+    "transform": [["babelify", { "presets": ["es2015"] }]]
+  },
   "devDependencies": {
     "babel-preset-es2015": "^6.22.0",
     "babelify": "^7.3.0",
