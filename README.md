@@ -4,6 +4,7 @@ A HTML5 audio visualizer for microphone or line-in input.
 
 ![](thumbnail.jpg)
 
+
 ## Requirements
 
 A browser with `canvas` and `getUserMedia` support. (Currently Chrome, Firefox, Edge, and Opera)
@@ -34,6 +35,7 @@ var options = {
 var viz = visualizer(options)
 ```
 
+
 ## Running the examples
 
 open any of the index files in the `examples/` directory.
@@ -42,16 +44,6 @@ You'll be prompted to allow microphone access. Upon accepting, the visualization
 
 * Press number keys `1` - `7` to select a visualization.
 * Press `+`/`=` key to switch between variants of that visualization. Some visualizations don't have a variant.
-
-
-## Using as a standard javascript include
-
-see `examples/browser-global/`
-
-
-## Using with browserify
-
-see `examples/browserify/`
 
 
 ## generating your own visualizations
@@ -66,4 +58,3 @@ var viz = visualizer()
 
 viz.addVisualization(require('./some-visualizer-i-wrote'))
 ```
-
