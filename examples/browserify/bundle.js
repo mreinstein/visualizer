@@ -214,831 +214,903 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 },{}],3:[function(require,module,exports){
+'use strict';
 
-const getUserMedia  = require('get-user-media-promise')
-const raf           = require('raf')
-const vizRadialArcs = require('./lib/vizRadialArcs')
-const vizRadialBars = require('./lib/vizRadialBars')
-const vizFlyout     = require('./lib/vizFlyout')
-const vizSunburst   = require('./lib/vizSunburst')
-const vizBoxes      = require('./lib/vizBoxes')
-const vizSpikes     = require('./lib/vizSpikes')
-const vizImage      = require('./lib/vizImage')
+var getUserMedia = require('get-user-media-promise');
+var nextTick = require('next-tick');
+var raf = require('raf');
+var vizRadialArcs = require('./lib/vizRadialArcs');
+var vizRadialBars = require('./lib/vizRadialBars');
+var vizFlyout = require('./lib/vizFlyout');
+var vizSunburst = require('./lib/vizSunburst');
+var vizBoxes = require('./lib/vizBoxes');
+var vizSpikes = require('./lib/vizSpikes');
+var vizImage = require('./lib/vizImage');
 
+module.exports = function visualizer() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-module.exports = function visualizer(options={}) {
-
-  const parent = options.parent ? document.querySelector(options.parent) : window
-  const cv = document.createElement('canvas')
+  var parent = options.parent ? document.querySelector(options.parent) : window;
+  var cv = document.createElement('canvas');
   if (!options.parent) {
-    cv.style.position = 'absolute'
-    cv.style.left = '0'
-    cv.style.top = '0'
-    document.body.appendChild(cv)
+    cv.style.position = 'absolute';
+    cv.style.left = '0';
+    cv.style.top = '0';
+    document.body.appendChild(cv);
+  } else {
+    parent.appendChild(cv);
   }
-  else {
-    parent.appendChild(cv)
-  }
 
-  const ctx = cv.getContext('2d')
-  
-  const image = options.image
+  var ctx = cv.getContext('2d');
 
-  const visualizers = []
+  var image = options.image;
 
-  let currentViz = 0
+  var visualizers = [];
+
+  var currentViz = 0;
 
   // for audio processing
   //let analyseInterval = 1000 / 30
-  const fftSize = 256
- 
+  var fftSize = 256;
+
   // although the actual spectrum size is half the FFT size,
   // the highest frequencies aren't really important here
-  const bandCount = Math.round(fftSize / 3)
+  var bandCount = Math.round(fftSize / 3);
 
-  let analyser, spectrum
+  var analyser = void 0,
+      spectrum = void 0;
 
-  const lastVolumes = []
+  var lastVolumes = [];
 
-  const rotateAmount = (Math.PI * 2.0) / bandCount
+  var rotateAmount = Math.PI * 2.0 / bandCount;
 
   // sets up mic/line-in input
-  let _getMediaStream = function(callback) {
+  var _getMediaStream = function _getMediaStream(callback) {
     if (options.stream) {
-      return setTimeout(function() {
-        callback(null, options.stream)
-      }, 0)
+      return nextTick(function () {
+        callback(null, options.stream);
+      });
     }
 
-    getUserMedia({ video: false, audio: true })
-      .then(function(stream) {
-        callback(null, stream)
-      })
-      .catch(function(e) {
-        callback(e)
-      })
-  }
+    getUserMedia({ video: false, audio: true }).then(function (stream) {
+      callback(null, stream);
+    }).catch(function (e) {
+      callback(e);
+    });
+  };
 
-
-  let _init = function(stream) {
+  var _init = function _init(stream) {
     // sets up the application loop
 
     // initialize nodes
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    const source = audioCtx.createMediaStreamSource(stream)
-    analyser = audioCtx.createAnalyser()
+    var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    var source = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
 
     // set node properties and connect
-    analyser.smoothingTimeConstant = 0.2
-    analyser.fftSize = fftSize
+    analyser.smoothingTimeConstant = 0.2;
+    analyser.fftSize = fftSize;
 
-    spectrum = new Uint8Array(analyser.frequencyBinCount)
-    source.connect(analyser)
+    spectrum = new Uint8Array(analyser.frequencyBinCount);
+    source.connect(analyser);
 
     // misc setup
-    for (let i = 0; i < bandCount; i++) { lastVolumes.push(0) }
+    for (var i = 0; i < bandCount; i++) {
+      lastVolumes.push(0);
+    }
 
     // set up visualizer list
-    const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image, fftSize }
-    visualizers.push(vizRadialArcs(options))
-    visualizers.push(vizRadialBars(options))
-    visualizers.push(vizFlyout(options))
-    visualizers.push(vizSunburst(options))
-    visualizers.push(vizBoxes(options))
-    visualizers.push(vizSpikes(options))
-    visualizers.push(vizImage(options))
+    var options = { cv: cv, ctx: ctx, bandCount: bandCount, rotateAmount: rotateAmount, lastVolumes: lastVolumes, image: image, fftSize: fftSize };
+    visualizers.push(vizRadialArcs(options));
+    visualizers.push(vizRadialBars(options));
+    visualizers.push(vizFlyout(options));
+    visualizers.push(vizSunburst(options));
+    visualizers.push(vizBoxes(options));
+    visualizers.push(vizSpikes(options));
+    visualizers.push(vizImage(options));
 
-    _recalculateSizes()
-    _visualize()
+    _recalculateSizes();
+    _visualize();
 
-    window.onresize = function() {
-      _recalculateSizes()
-    }
-  }
+    window.onresize = function () {
+      _recalculateSizes();
+    };
+  };
 
   // add a new visualizer module
-  let addVisualization = function(viz) {
-    const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image, fftSize }
-    visualizers.push(viz(options))
-  }
+  var addVisualization = function addVisualization(viz) {
+    var options = { cv: cv, ctx: ctx, bandCount: bandCount, rotateAmount: rotateAmount, lastVolumes: lastVolumes, image: image, fftSize: fftSize };
+    visualizers.push(viz(options));
+  };
 
-  let showNextVisualization = function() {
-    currentViz = (currentViz + 1) % visualizers.length
-    _recalculateSizes()
-  }
+  var showNextVisualization = function showNextVisualization() {
+    currentViz = (currentViz + 1) % visualizers.length;
+    _recalculateSizes();
+  };
 
-  let showVisualization = function(idx) {
-    if (idx < 0) idx = 0
-    if (idx >= visualizers.length) idx = visualizers.length - 1
+  var showVisualization = function showVisualization(idx) {
+    if (idx < 0) idx = 0;
+    if (idx >= visualizers.length) idx = visualizers.length - 1;
 
-    currentViz = idx
-    _recalculateSizes()
-  }
+    currentViz = idx;
+    _recalculateSizes();
+  };
 
   // varies the current visualization
-  let vary = function() {
+  var vary = function vary() {
     if (visualizers[currentViz].vary) {
-      visualizers[currentViz].vary()
+      visualizers[currentViz].vary();
     }
-  }
+  };
 
-  let _recalculateSizes = function() {
-    const ratio = window.devicePixelRatio || 1
+  var _recalculateSizes = function _recalculateSizes() {
+    var ratio = window.devicePixelRatio || 1;
 
-    const w = parent.innerWidth || parent.clientWidth
-    const h = parent.innerHeight || parent.clientHeight
+    var w = parent.innerWidth || parent.clientWidth;
+    var h = parent.innerHeight || parent.clientHeight;
 
-    cv.width = w * ratio
-    cv.height = h * ratio
-    cv.style.width = w + 'px'
-    cv.style.height = h + 'px'
-    visualizers[currentViz].resize()
-  }
-
+    cv.width = w * ratio;
+    cv.height = h * ratio;
+    cv.style.width = w + 'px';
+    cv.style.height = h + 'px';
+    visualizers[currentViz].resize();
+  };
 
   // called each audio frame, manages rendering of visualization
-  let _visualize = function() {
-    analyser.getByteFrequencyData(spectrum)
+  var _visualize = function _visualize() {
+    analyser.getByteFrequencyData(spectrum);
 
     // dampen falloff for some visualizations
     if (visualizers[currentViz].dampen === true) {
-      for (let i = 0; i < spectrum.length; i++) {
+      for (var i = 0; i < spectrum.length; i++) {
         if (lastVolumes[i] > spectrum[i]) {
-          spectrum[i] = (spectrum[i] + lastVolumes[i]) / 2
+          spectrum[i] = (spectrum[i] + lastVolumes[i]) / 2;
         }
       }
     }
 
-    visualizers[currentViz].draw(spectrum)
+    visualizers[currentViz].draw(spectrum);
 
-    raf(_visualize)
-  }
+    raf(_visualize);
+  };
 
-  _getMediaStream(function(err, stream) {
-    if(err) {
-      console.log(err)
-      throw new Error('Unable to start visualization. Make sure you\'re using Chrome or ' +
-        'Firefox with a microphone set up, and that you allow the page to access' +
-        ' the microphone.')
+  _getMediaStream(function (err, stream) {
+    if (err) {
+      console.log(err);
+      throw new Error('Unable to start visualization. Make sure you\'re using Chrome or ' + 'Firefox with a microphone set up, and that you allow the page to access' + ' the microphone.');
     }
-    _init(stream)
-  })
+    _init(stream);
+  });
 
-  return Object.freeze({ addVisualization, showNextVisualization, showVisualization, vary })
-}
+  return Object.freeze({ addVisualization: addVisualization, showNextVisualization: showNextVisualization, showVisualization: showVisualization, vary: vary });
+};
 
-},{"./lib/vizBoxes":8,"./lib/vizFlyout":9,"./lib/vizImage":10,"./lib/vizRadialArcs":11,"./lib/vizRadialBars":12,"./lib/vizSpikes":13,"./lib/vizSunburst":14,"get-user-media-promise":15,"raf":17}],4:[function(require,module,exports){
-const HSVtoRGB = require('./hsv-to-rgb')
+},{"./lib/vizBoxes":7,"./lib/vizFlyout":8,"./lib/vizImage":9,"./lib/vizRadialArcs":10,"./lib/vizRadialBars":11,"./lib/vizSpikes":12,"./lib/vizSunburst":13,"get-user-media-promise":15,"next-tick":16,"raf":18}],4:[function(require,module,exports){
+'use strict';
 
+var HSVtoRGB = require('./hsv-to-rgb');
 
-const bigColorMap = []
-const bigColorMap2 = []
+var bigColorMap = [];
+var bigColorMap2 = [];
 
 function generateColors() {
-  for (let hue = 0; hue < 360; hue++) {
-    for (let brightness = 0; brightness < 100; brightness++) {
-      const color = HSVtoRGB(hue / 360, 1, brightness / 100, true, false)
-      bigColorMap.push(color)
-      const color2 = HSVtoRGB(hue / 360, 1, brightness / 100, false, true)
-      bigColorMap2.push(color2)
+  for (var hue = 0; hue < 360; hue++) {
+    for (var brightness = 0; brightness < 100; brightness++) {
+      var color = HSVtoRGB(hue / 360, 1, brightness / 100, true, false);
+      bigColorMap.push(color);
+      var color2 = HSVtoRGB(hue / 360, 1, brightness / 100, false, true);
+      bigColorMap2.push(color2);
     }
   }
 }
 
-generateColors()
+generateColors();
 
 module.exports = {
   bigColorMap: bigColorMap,
   bigColorMap2: bigColorMap2
-}
+};
 
-},{"./hsv-to-rgb":7}],5:[function(require,module,exports){
-module.exports = function constrain(input, min, max) {
-  if (input < min) {
-    input = min
-  } else if (input > max) {
-    input = max
-  }
-  return input
-}
-
-},{}],6:[function(require,module,exports){
+},{"./hsv-to-rgb":6}],5:[function(require,module,exports){
+'use strict';
 
 module.exports = function textureImage(image) {
+    var canvas = document.createElement('canvas'),
+        ctx = canvas.getContext('2d'),
+        grd = void 0;
 
-  let canvas = document.createElement('canvas'),
-      ctx = canvas.getContext('2d'),
-      grd
-      
-  canvas.width = 300
-  canvas.height = 300
+    canvas.width = 300;
+    canvas.height = 300;
 
-  // Create gradient
-  grd = ctx.createRadialGradient(150.000, 150.000, 0.000, 150.000, 150.000, 150.000)
-  
-  // Add colors
-  grd.addColorStop(0.000, 'rgba(255, 255, 255, 1.000)')
-  grd.addColorStop(1.000, 'rgba(255, 255, 255, 0.000)')
-  
-  // Fill with gradient
-  ctx.fillStyle = grd
-  ctx.fillRect(0, 0, 300.000, 300.000)
+    // Create gradient
+    grd = ctx.createRadialGradient(150.000, 150.000, 0.000, 150.000, 150.000, 150.000);
 
-  image.src = canvas.toDataURL()
-}
+    // Add colors
+    grd.addColorStop(0.000, 'rgba(255, 255, 255, 1.000)');
+    grd.addColorStop(1.000, 'rgba(255, 255, 255, 0.000)');
 
-},{}],7:[function(require,module,exports){
+    // Fill with gradient
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, 300.000, 300.000);
+
+    image.src = canvas.toDataURL();
+};
+
+},{}],6:[function(require,module,exports){
+'use strict';
+
 // http://stackoverflow.com/a/5624139
 function componentToHex(c) {
-    let hex = c.toString(16)
-    return hex.length === 1 ? "0" + hex : hex
+  var hex = c.toString(16);
+  return hex.length === 1 ? "0" + hex : hex;
 }
 
 // http://stackoverflow.com/a/17243070
 module.exports = function HSVtoRGB(h, s, v, hex, separate) {
-  let r, g, b, i, f, p, q, t
+  var r = void 0,
+      g = void 0,
+      b = void 0,
+      i = void 0,
+      f = void 0,
+      p = void 0,
+      q = void 0,
+      t = void 0;
   if (h && s === undefined && v === undefined) {
-    s = h.s, v = h.v, h = h.h
+    s = h.s, v = h.v, h = h.h;
   }
-  i = Math.floor(h * 6)
-  f = h * 6 - i
-  p = v * (1 - s)
-  q = v * (1 - f * s)
-  t = v * (1 - (1 - f) * s)
+  i = Math.floor(h * 6);
+  f = h * 6 - i;
+  p = v * (1 - s);
+  q = v * (1 - f * s);
+  t = v * (1 - (1 - f) * s);
   switch (i % 6) {
-    case 0: r = v, g = t, b = p; break;
-    case 1: r = q, g = v, b = p; break;
-    case 2: r = p, g = v, b = t; break;
-    case 3: r = p, g = q, b = v; break;
-    case 4: r = t, g = p, b = v; break;
-    case 5: r = v, g = p, b = q; break;
+    case 0:
+      r = v, g = t, b = p;break;
+    case 1:
+      r = q, g = v, b = p;break;
+    case 2:
+      r = p, g = v, b = t;break;
+    case 3:
+      r = p, g = q, b = v;break;
+    case 4:
+      r = t, g = p, b = v;break;
+    case 5:
+      r = v, g = p, b = q;break;
   }
-  r = Math.floor(r * 255)
-  g = Math.floor(g * 255)
-  b = Math.floor(b * 255)
+  r = Math.floor(r * 255);
+  g = Math.floor(g * 255);
+  b = Math.floor(b * 255);
   if (hex) {
-    return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b)
+    return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b);
   } else if (separate) {
-    return [r, g, b]
+    return [r, g, b];
   } else {
-    return 'rgb(' + r + ',' + g + ',' + b + ')'
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
   }
-}
+};
 
-},{}],8:[function(require,module,exports){
-const colorMap  = require('./big-color-map')
-const constrain = require('./constrain')
+},{}],7:[function(require,module,exports){
+'use strict';
 
+var clamp = require('clamp');
+var colorMap = require('./big-color-map');
 
 // a wall of boxes that brighten
-module.exports = function vizBoxes(options={}) {
-  let { ctx, cv } = options
-  const dampen = true
-  let variant = 0
-  let variants = [[false], [true]]
+module.exports = function vizBoxes() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var ctx = options.ctx,
+      cv = options.cv;
 
-  let grow, longestSide
-  let hueOffset = 0
+  var dampen = true;
+  var variant = 0;
+  var variants = [[false], [true]];
 
-  let draw = function(spectrum) {
-    hueOffset += 0.25
+  var grow = void 0,
+      longestSide = void 0;
+  var hueOffset = 0;
+
+  var draw = function draw(spectrum) {
+    hueOffset += 0.25;
     //spectrum = reduceBuckets(spectrum, 81)
-    ctx.clearRect(0, 0, cv.width, cv.height)
+    ctx.clearRect(0, 0, cv.width, cv.height);
 
-    let size = 11
-    let i = 0
-    let x = Math.floor((size - 1) / 2)
-    let y = x
-    let loop = 0
+    var size = 11;
+    var i = 0;
+    var x = Math.floor((size - 1) / 2);
+    var y = x;
+    var loop = 0;
 
-    let dx = 0
-    let dy = 0
-    
-    let cw = cv.width / size
-    let ch = cv.height / size
-    
+    var dx = 0;
+    var dy = 0;
+
+    var cw = cv.width / size;
+    var ch = cv.height / size;
+
     while (i < size * size) {
-      switch(loop % 4) {
-      case 0: dx = 1; dy = 0; break;
-      case 1: dx = 0; dy = 1; break;
-      case 2: dx = -1; dy = 0; break;
-      case 3: dx = 0; dy = -1; break;
+      switch (loop % 4) {
+        case 0:
+          dx = 1;dy = 0;break;
+        case 1:
+          dx = 0;dy = 1;break;
+        case 2:
+          dx = -1;dy = 0;break;
+        case 3:
+          dx = 0;dy = -1;break;
       }
 
       for (var j = 0; j < Math.floor(loop / 2) + 1; j++) {
-        let hue = Math.floor(360.0 / (size * size) * i + hueOffset) % 360
-        let brightness = constrain(Math.floor(spectrum[i] / 1.5), 10, 99)
-        ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness]
-        let intensity = 0.9
+        var hue = Math.floor(360.0 / (size * size) * i + hueOffset) % 360;
+        var brightness = clamp(Math.floor(spectrum[i] / 1.5), 10, 99);
+        ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness];
+        var intensity = 0.9;
         if (grow) {
-          intensity = spectrum[i] / 255 / 4 + 0.65
-          //intensity = constrain(intensity, 0.1, 0.9)
+          intensity = spectrum[i] / 255 / 4 + 0.65;
+          //intensity = clamp(intensity, 0.1, 0.9)
         }
-        ctx.fillRect(x * cw + cw / 2 * (1 - intensity),
-          y * ch + ch / 2 * (1 - intensity), cw * intensity, ch * intensity)
-        
-        x += dx
-        y += dy
-        i++
+        ctx.fillRect(x * cw + cw / 2 * (1 - intensity), y * ch + ch / 2 * (1 - intensity), cw * intensity, ch * intensity);
+
+        x += dx;
+        y += dy;
+        i++;
       }
-      loop++
+      loop++;
     }
 
     // reset current transformation matrix to the identity matrix
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-  }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  };
 
-  let resize = function() {
-    longestSide = Math.max(cv.width, cv.height)
-  }
+  var resize = function resize() {
+    longestSide = Math.max(cv.width, cv.height);
+  };
 
-  let vary = function() {
-    variant = (variant + 1) % variants.length
-    grow = variants[variant][0]
-  }
+  var vary = function vary() {
+    variant = (variant + 1) % variants.length;
+    grow = variants[variant][0];
+  };
 
-  vary()
+  vary();
 
-  return Object.freeze({ dampen, vary, resize, draw })
-}
+  return Object.freeze({ dampen: dampen, vary: vary, resize: resize, draw: draw });
+};
 
-},{"./big-color-map":4,"./constrain":5}],9:[function(require,module,exports){
-const constrain = require('./constrain')
-const HSVtoRGB  = require('./hsv-to-rgb')
+},{"./big-color-map":4,"clamp":14}],8:[function(require,module,exports){
+'use strict';
 
+var clamp = require('clamp');
+var HSVtoRGB = require('./hsv-to-rgb');
 
 // bars flying from center
-module.exports = function vizFlyout(options={}) {
-  let { ctx, cv, bandCount, rotateAmount } = options
+module.exports = function vizFlyout() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var ctx = options.ctx,
+      cv = options.cv,
+      bandCount = options.bandCount,
+      rotateAmount = options.rotateAmount;
 
-  const dampen = false
-  let allRotate = 0
-  let variant = 0
-  let longestSide, heightMultiplier, bars, offset, maxDistance
 
-  const variants = [[2], [3]]
+  var dampen = false;
+  var allRotate = 0;
+  var variant = 0;
+  var longestSide = void 0,
+      heightMultiplier = void 0,
+      bars = void 0,
+      offset = void 0,
+      maxDistance = void 0;
 
-  const distances = []
-  for (let i = 0; i < bandCount; i++) {
-    distances.push(0)
+  var variants = [[2], [3]];
+
+  var distances = [];
+  for (var i = 0; i < bandCount; i++) {
+    distances.push(0);
   }
-  
-  let draw = function(spectrum) {
-    ctx.save()
-    ctx.clearRect(0, 0, cv.width, cv.height)
-    ctx.translate(cv.width / 2, cv.height / 2)
-    ctx.rotate(allRotate)
-    for (let i = 0; i < bandCount; i++) {
-      ctx.rotate(rotateAmount)
-      ctx.lineWidth = 1 + (spectrum[i] / 256 * 5)
 
-      let hue = (360.0 / bandCount * i) / 360.0
-      let brightness = constrain(spectrum[i] * 1.0 / 150, 0.3, 1)
-      ctx.strokeStyle = HSVtoRGB(hue, 1, brightness)
+  var draw = function draw(spectrum) {
+    ctx.save();
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.translate(cv.width / 2, cv.height / 2);
+    ctx.rotate(allRotate);
+    for (var _i = 0; _i < bandCount; _i++) {
+      ctx.rotate(rotateAmount);
+      ctx.lineWidth = 1 + spectrum[_i] / 256 * 5;
 
-      distances[i] += (Math.max(50, spectrum[i]) * heightMultiplier / 40)
-      distances[i] %= offset
+      var hue = 360.0 / bandCount * _i / 360.0;
+      var brightness = clamp(spectrum[_i] * 1.0 / 150, 0.3, 1);
+      ctx.strokeStyle = HSVtoRGB(hue, 1, brightness);
+
+      distances[_i] += Math.max(50, spectrum[_i]) * heightMultiplier / 40;
+      distances[_i] %= offset;
       for (var j = 0; j < bars; j++) {
-        _arc(distances[i] + j * offset, rotateAmount * .75)
+        _arc(distances[_i] + j * offset, rotateAmount * .75);
       }
     }
-    allRotate += 0.002
+    allRotate += 0.002;
 
-    ctx.restore()
-  }
+    ctx.restore();
+  };
 
-  let resize = function() {
-    const shortestSide = Math.min(cv.width, cv.height)
-    longestSide = Math.max(cv.width, cv.height)
-    heightMultiplier = 1.0 / 800 * shortestSide
+  var resize = function resize() {
+    var shortestSide = Math.min(cv.width, cv.height);
+    longestSide = Math.max(cv.width, cv.height);
+    heightMultiplier = 1.0 / 800 * shortestSide;
 
-    maxDistance = longestSide * 0.71
-    offset = maxDistance / bars
-  }
+    maxDistance = longestSide * 0.71;
+    offset = maxDistance / bars;
+  };
 
-  let vary = function() {
-    variant = (variant + 1) % variants.length
-    bars = variants[variant][0]
-  }
+  var vary = function vary() {
+    variant = (variant + 1) % variants.length;
+    bars = variants[variant][0];
+  };
 
-  let _arc = function(distance, angle) {
-    ctx.beginPath()
-    ctx.arc(0, 0, distance, 0, angle)
-    ctx.stroke()
-    ctx.closePath()
-  }
+  var _arc = function _arc(distance, angle) {
+    ctx.beginPath();
+    ctx.arc(0, 0, distance, 0, angle);
+    ctx.stroke();
+    ctx.closePath();
+  };
 
-  vary()
+  vary();
 
-  return Object.freeze({ dampen, resize, draw, vary })
-}
+  return Object.freeze({ dampen: dampen, resize: resize, draw: draw, vary: vary });
+};
 
-},{"./constrain":5,"./hsv-to-rgb":7}],10:[function(require,module,exports){
-const colorMap  = require('./big-color-map')
-const constrain = require('./constrain')
+},{"./hsv-to-rgb":6,"clamp":14}],9:[function(require,module,exports){
+'use strict';
 
+var clamp = require('clamp');
+var colorMap = require('./big-color-map');
 
 // an image that's colored to the beat
-module.exports = function vizImage(options={}) {
-  let { ctx, cv, bandCount, image, fftSize } = options
+module.exports = function vizImage() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var ctx = options.ctx,
+      cv = options.cv,
+      bandCount = options.bandCount,
+      image = options.image,
+      fftSize = options.fftSize;
 
-  const dampen = true
 
-  let width, height, tX, tY, scale, bufferImgData
+  var dampen = true;
 
-  const greyscaled = []
+  var width = void 0,
+      height = void 0,
+      tX = void 0,
+      tY = void 0,
+      scale = void 0,
+      bufferImgData = void 0;
+
+  var greyscaled = [];
 
   // offscreen image buffer
-  let bufferCv, bufferCtx
+  var bufferCv = void 0,
+      bufferCtx = void 0;
 
-  let hueOffset = 0
-  
-  let draw = function(spectrum) {
+  var hueOffset = 0;
+
+  var draw = function draw(spectrum) {
     // if the image hasn't loaded yet, don't render the visualization
-    if (!bufferImgData) return
+    if (!bufferImgData) return;
 
-    ctx.save()
-    ctx.clearRect(0, 0, cv.width, cv.height)
-    ctx.translate(tX, tY)
-    hueOffset += 1
+    ctx.save();
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.translate(tX, tY);
+    hueOffset += 1;
 
-    for (let i = 0; i < greyscaled.length; i++) {
-      let frequency = greyscaled[i]
-      let hue = Math.floor(spectrum[frequency] + hueOffset) % 360
+    for (var i = 0; i < greyscaled.length; i++) {
+      var frequency = greyscaled[i];
+      var hue = Math.floor(spectrum[frequency] + hueOffset) % 360;
 
-      let brightness = Math.sqrt((frequency / spectrum.length) * (spectrum[frequency] / fftSize)) * 100
-      brightness = constrain(Math.floor(brightness), 0, 99)
-      let color = colorMap.bigColorMap2[hue * 100 + brightness]
-      bufferImgData.data[i*4]   = color[0]
-      bufferImgData.data[i*4+1] = color[1]
-      bufferImgData.data[i*4+2] = color[2]
+      var brightness = Math.sqrt(frequency / spectrum.length * (spectrum[frequency] / fftSize)) * 100;
+      brightness = clamp(Math.floor(brightness), 0, 99);
+      var color = colorMap.bigColorMap2[hue * 100 + brightness];
+      bufferImgData.data[i * 4] = color[0];
+      bufferImgData.data[i * 4 + 1] = color[1];
+      bufferImgData.data[i * 4 + 2] = color[2];
     }
 
-    bufferCtx.putImageData(bufferImgData, 0, 0)
-    ctx.scale(scale, scale)
-    ctx.drawImage(bufferCv, 0, 0)
-    ctx.restore()
-  }
+    bufferCtx.putImageData(bufferImgData, 0, 0);
+    ctx.scale(scale, scale);
+    ctx.drawImage(bufferCv, 0, 0);
+    ctx.restore();
+  };
 
-  let resize = function() {
-    bufferCv.width = width
-    bufferCv.height = height
+  var resize = function resize() {
+    bufferCv.width = width;
+    bufferCv.height = height;
 
-    const w = cv.parentElement.innerWidth || cv.parentElement.clientWidth
-    const h = cv.parentElement.innerHeight || cv.parentElement.clientHeight
+    var w = cv.parentElement.innerWidth || cv.parentElement.clientWidth;
+    var h = cv.parentElement.innerHeight || cv.parentElement.clientHeight;
 
-    const sW = Math.floor(w / width)
-    const sH = Math.floor(h / height)
-    scale = Math.min(sW, sH)
+    var sW = Math.floor(w / width);
+    var sH = Math.floor(h / height);
+    scale = Math.min(sW, sH);
 
-    if (scale === 0) { scale = 1 }
+    if (scale === 0) {
+      scale = 1;
+    }
 
-    scale *= (window.devicePixelRatio || 1)
-    
-    tX = Math.floor((cv.width - (width * scale)) / 2)
-    tY = Math.floor((cv.height - (height * scale)) / 2)
+    scale *= window.devicePixelRatio || 1;
 
-    ctx.mozImageSmoothingEnabled = false
-    ctx.webkitImageSmoothingEnabled = false
-    ctx.msImageSmoothingEnabled = false
-    ctx.imageSmoothingEnabled = false
-  }
+    tX = Math.floor((cv.width - width * scale) / 2);
+    tY = Math.floor((cv.height - height * scale) / 2);
 
-  let _generateGreyscaleBuckets = function(image) {
-    width = image.width
-    height = image.height
+    ctx.mozImageSmoothingEnabled = false;
+    ctx.webkitImageSmoothingEnabled = false;
+    ctx.msImageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = false;
+  };
 
-    bufferCv = document.createElement('canvas')
-    bufferCv.width = width
-    bufferCv.height = height
-    bufferCtx = bufferCv.getContext('2d')
-    bufferCtx.clearRect(0, 0, width, height)
-    bufferCtx.drawImage(image, 0, 0, width, height)
+  var _generateGreyscaleBuckets = function _generateGreyscaleBuckets(image) {
+    width = image.width;
+    height = image.height;
 
-    const imageData = bufferCtx.getImageData(0, 0, width, height)
+    bufferCv = document.createElement('canvas');
+    bufferCv.width = width;
+    bufferCv.height = height;
+    bufferCtx = bufferCv.getContext('2d');
+    bufferCtx.clearRect(0, 0, width, height);
+    bufferCtx.drawImage(image, 0, 0, width, height);
+
+    var imageData = bufferCtx.getImageData(0, 0, width, height);
 
     // create temporary frame to be modified each draw call
-    bufferImgData = bufferCtx.createImageData(width, height)
+    bufferImgData = bufferCtx.createImageData(width, height);
 
     // analyze each pixel
-    for (let i = 0; i < width * height; i++) {
-      let grey = Math.round(imageData.data[i*4]   * 0.2126 +
-                            imageData.data[i*4+1] * 0.7152 +
-                            imageData.data[i*4+2] * 0.0722)
+    for (var i = 0; i < width * height; i++) {
+      var grey = Math.round(imageData.data[i * 4] * 0.2126 + imageData.data[i * 4 + 1] * 0.7152 + imageData.data[i * 4 + 2] * 0.0722);
 
       // fit to spectrum
-      greyscaled.push(Math.round(constrain(grey, 0, 255) / 255 * bandCount))
+      greyscaled.push(Math.round(clamp(grey, 0, 255) / 255 * bandCount));
       // set alpha, near-black parts are invisible
-      bufferImgData.data[i*4+3] = (grey < 1) ? 0 : 255
+      bufferImgData.data[i * 4 + 3] = grey < 1 ? 0 : 255;
     }
-  }
-
+  };
 
   // only load the image if the optional url is defined
-  if(image) {
-    let img = document.createElement('img')
-    img.onload = function() {
-      _generateGreyscaleBuckets(img)
-      resize()
-    }
+  if (image) {
+    var img = document.createElement('img');
+    img.onload = function () {
+      _generateGreyscaleBuckets(img);
+      resize();
+    };
 
-    img.src = image
+    img.src = image;
   }
 
-  return Object.freeze({ dampen, resize, draw })
-}
+  return Object.freeze({ dampen: dampen, resize: resize, draw: draw });
+};
 
-},{"./big-color-map":4,"./constrain":5}],11:[function(require,module,exports){
-const colorMap  = require('./big-color-map')
-const constrain = require('./constrain')
+},{"./big-color-map":4,"clamp":14}],10:[function(require,module,exports){
+'use strict';
 
+var clamp = require('clamp');
+var colorMap = require('./big-color-map');
 
 // arcs coming out from a circle
-module.exports = function vizRadialArcs(options={}) {
-  let { ctx, cv, bandCount, rotateAmount } = options
-  
-  const dampen = true
-  let allRotate = 0
- 
-  let centerRadius, heightMultiplier, gap, fade
+module.exports = function vizRadialArcs() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var ctx = options.ctx,
+      cv = options.cv,
+      bandCount = options.bandCount,
+      rotateAmount = options.rotateAmount;
 
-  let variant = 0
-  let variants = [[false, true], [true, false], [false, false]]
 
-  let vary = function() {
-    variant = (variant + 1) % variants.length
-    gap = variants[variant][0]
-    fade = variants[variant][1]
-  }
+  var dampen = true;
+  var allRotate = 0;
 
-  let resize = function() {
-    const shortestSide = Math.min(cv.width, cv.height)
-    centerRadius = 85.0 / 800 * shortestSide
-    heightMultiplier = 1.0 / 800 * shortestSide
-  }
+  var centerRadius = void 0,
+      heightMultiplier = void 0,
+      gap = void 0,
+      fade = void 0;
 
-  let draw = function(spectrum) {
+  var variant = 0;
+  var variants = [[false, true], [true, false], [false, false]];
 
-    ctx.clearRect(0, 0, cv.width, cv.height)
-    ctx.translate(cv.width / 2, cv.height / 2)
-    ctx.rotate(allRotate)
-    for (let i = 0; i < bandCount; i++) {
-      ctx.rotate(rotateAmount)
-      let hue = Math.floor(360.0 / bandCount * i)
-      let brightness = 99
+  var vary = function vary() {
+    variant = (variant + 1) % variants.length;
+    gap = variants[variant][0];
+    fade = variants[variant][1];
+  };
+
+  var resize = function resize() {
+    var shortestSide = Math.min(cv.width, cv.height);
+    centerRadius = 85.0 / 800 * shortestSide;
+    heightMultiplier = 1.0 / 800 * shortestSide;
+  };
+
+  var draw = function draw(spectrum) {
+
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.translate(cv.width / 2, cv.height / 2);
+    ctx.rotate(allRotate);
+    for (var i = 0; i < bandCount; i++) {
+      ctx.rotate(rotateAmount);
+      var hue = Math.floor(360.0 / bandCount * i);
+      var brightness = 99;
       if (fade) {
-        brightness = constrain(Math.floor(spectrum[i] / 1.5), 25, 99)
+        brightness = clamp(Math.floor(spectrum[i] / 1.5), 25, 99);
       }
-      ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness]
+      ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness];
 
-      ctx.beginPath()
+      ctx.beginPath();
       if (gap) {
-        ctx.arc(0, 0, centerRadius + Math.max(spectrum[i] * heightMultiplier, 2),
-          0, rotateAmount / 2)
+        ctx.arc(0, 0, centerRadius + Math.max(spectrum[i] * heightMultiplier, 2), 0, rotateAmount / 2);
       } else {
-        ctx.arc(0, 0, centerRadius + Math.max(spectrum[i] * heightMultiplier, 2),
-          0, rotateAmount + 0.005)
+        ctx.arc(0, 0, centerRadius + Math.max(spectrum[i] * heightMultiplier, 2), 0, rotateAmount + 0.005);
       }
-      ctx.lineTo(0, 0)
-      ctx.fill()
-      ctx.closePath()
+      ctx.lineTo(0, 0);
+      ctx.fill();
+      ctx.closePath();
     }
-    ctx.fillStyle = '#000000'
-    ctx.beginPath()
-    ctx.arc(0, 0, centerRadius, 0, 2 * Math.PI, false)
-    ctx.fill()
-    ctx.closePath()
-    allRotate += 0.002
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(0, 0, centerRadius, 0, 2 * Math.PI, false);
+    ctx.fill();
+    ctx.closePath();
+    allRotate += 0.002;
 
     // reset current transformation matrix to the identity matrix
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-  }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  };
 
-  vary()
+  vary();
 
-  return Object.freeze({ dampen, vary, resize, draw })
-}
+  return Object.freeze({ dampen: dampen, vary: vary, resize: resize, draw: draw });
+};
 
-},{"./big-color-map":4,"./constrain":5}],12:[function(require,module,exports){
-const colorMap  = require('./big-color-map')
-const constrain = require('./constrain')
+},{"./big-color-map":4,"clamp":14}],11:[function(require,module,exports){
+'use strict';
 
+var clamp = require('clamp');
+var colorMap = require('./big-color-map');
 
 // bars coming out from a circle
-module.exports = function vizRadialBars(options={}) {
-  let { ctx, cv, bandCount, rotateAmount, lastVolumes } = options
+module.exports = function vizRadialBars() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var ctx = options.ctx,
+      cv = options.cv,
+      bandCount = options.bandCount,
+      rotateAmount = options.rotateAmount,
+      lastVolumes = options.lastVolumes;
 
-  let bandWidth, fade, centerRadius, heightMultiplier
-  const dampen = true
-  let variant = 0
-  let variants = [[false], [true]]
-  let allRotate = 0
 
-  let draw = function(spectrum) {
-    ctx.clearRect(0, 0, cv.width, cv.height)
-    ctx.translate(cv.width / 2, cv.height / 2)
-    ctx.rotate(allRotate)
-    for (let i = 0; i < bandCount; i++) {
-      ctx.rotate(rotateAmount)
-      let hue = Math.floor(360.0 / bandCount * i)
+  var bandWidth = void 0,
+      fade = void 0,
+      centerRadius = void 0,
+      heightMultiplier = void 0;
+  var dampen = true;
+  var variant = 0;
+  var variants = [[false], [true]];
+  var allRotate = 0;
+
+  var draw = function draw(spectrum) {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.translate(cv.width / 2, cv.height / 2);
+    ctx.rotate(allRotate);
+    for (var i = 0; i < bandCount; i++) {
+      ctx.rotate(rotateAmount);
+      var hue = Math.floor(360.0 / bandCount * i);
       if (fade) {
-        let brightness = constrain(Math.floor(spectrum[i] / 1.5), 25, 99)
-        ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness]
-        ctx.fillRect(-bandWidth / 2, centerRadius, bandWidth,
-          Math.max(2, spectrum[i] * heightMultiplier))
+        var brightness = clamp(Math.floor(spectrum[i] / 1.5), 25, 99);
+        ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness];
+        ctx.fillRect(-bandWidth / 2, centerRadius, bandWidth, Math.max(2, spectrum[i] * heightMultiplier));
       } else {
-        let avg = 0
-        avg = (spectrum[i] + lastVolumes[i]) / 2
-        ctx.fillStyle = colorMap.bigColorMap[hue * 100 + 50]
-        ctx.fillRect(-bandWidth / 2, centerRadius + avg, bandWidth, 2)
-        ctx.fillStyle = colorMap.bigColorMap[hue * 100 + 99]
-        ctx.fillRect(-bandWidth / 2, centerRadius, bandWidth,
-          spectrum[i] * heightMultiplier)
+        var avg = 0;
+        avg = (spectrum[i] + lastVolumes[i]) / 2;
+        ctx.fillStyle = colorMap.bigColorMap[hue * 100 + 50];
+        ctx.fillRect(-bandWidth / 2, centerRadius + avg, bandWidth, 2);
+        ctx.fillStyle = colorMap.bigColorMap[hue * 100 + 99];
+        ctx.fillRect(-bandWidth / 2, centerRadius, bandWidth, spectrum[i] * heightMultiplier);
       }
     }
-    allRotate += 0.002
+    allRotate += 0.002;
 
     // reset current transformation matrix to the identity matrix
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-  }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  };
 
-  let vary = function() {
-    variant = (variant + 1) % variants.length
-    fade = variants[variant][0]
-  }
+  var vary = function vary() {
+    variant = (variant + 1) % variants.length;
+    fade = variants[variant][0];
+  };
 
-  let resize = function() {
-    const shortestSide = Math.min(cv.width, cv.height)
-    centerRadius = 85.0 / 800 * shortestSide
-    heightMultiplier = 1.0 / 800 * shortestSide
-    bandWidth = Math.PI * 2 * centerRadius / bandCount
-  }
+  var resize = function resize() {
+    var shortestSide = Math.min(cv.width, cv.height);
+    centerRadius = 85.0 / 800 * shortestSide;
+    heightMultiplier = 1.0 / 800 * shortestSide;
+    bandWidth = Math.PI * 2 * centerRadius / bandCount;
+  };
 
-  vary()
-  
-  return Object.freeze({ dampen, vary, resize, draw })
-}
+  vary();
 
-},{"./big-color-map":4,"./constrain":5}],13:[function(require,module,exports){
-const colorMap  = require('./big-color-map')
-const constrain = require('./constrain')
+  return Object.freeze({ dampen: dampen, vary: vary, resize: resize, draw: draw });
+};
 
+},{"./big-color-map":4,"clamp":14}],12:[function(require,module,exports){
+'use strict';
+
+var clamp = require('clamp');
+var colorMap = require('./big-color-map');
 
 // spikes coming from off screen
 
-module.exports = function vizSpikes(options={}) {
-  let { ctx, cv, bandCount, rotateAmount } = options
-  const dampen = true
+module.exports = function vizSpikes() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var ctx = options.ctx,
+      cv = options.cv,
+      bandCount = options.bandCount,
+      rotateAmount = options.rotateAmount;
 
-  let centerRadius, hypotenuse, shortestSide
-  let hueOffset = 0
+  var dampen = true;
 
-  let draw = function(spectrum) {
-    hueOffset += 1
-    ctx.clearRect(0, 0, cv.width, cv.height)
-    ctx.translate(cv.width / 2, cv.height / 2)
-    ctx.rotate(Math.PI / 2)
-    
-    for (let i = 0; i < bandCount; i++) {
-      let hue = Math.floor(360.0 / bandCount * i + hueOffset) % 360
-      let brightness = constrain(Math.floor(spectrum[i] / 1.5), 15, 99)
-      ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness]
+  var centerRadius = void 0,
+      hypotenuse = void 0,
+      shortestSide = void 0;
+  var hueOffset = 0;
 
-      let inner = shortestSide / 2
-      inner = inner - (inner - centerRadius) * (spectrum[i] / 255)
-      ctx.beginPath()
-      ctx.arc(0, 0, hypotenuse / 2, -rotateAmount / 2, rotateAmount / 2)
-      ctx.lineTo(inner, 0)
-      ctx.fill()
-      ctx.closePath()
-      ctx.rotate(rotateAmount)
+  var draw = function draw(spectrum) {
+    hueOffset += 1;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.translate(cv.width / 2, cv.height / 2);
+    ctx.rotate(Math.PI / 2);
+
+    for (var i = 0; i < bandCount; i++) {
+      var hue = Math.floor(360.0 / bandCount * i + hueOffset) % 360;
+      var brightness = clamp(Math.floor(spectrum[i] / 1.5), 15, 99);
+      ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness];
+
+      var inner = shortestSide / 2;
+      inner = inner - (inner - centerRadius) * (spectrum[i] / 255);
+      ctx.beginPath();
+      ctx.arc(0, 0, hypotenuse / 2, -rotateAmount / 2, rotateAmount / 2);
+      ctx.lineTo(inner, 0);
+      ctx.fill();
+      ctx.closePath();
+      ctx.rotate(rotateAmount);
     }
     //allRotate += 0.002
 
     // reset current transformation matrix to the identity matrix
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-  }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  };
 
-  let resize = function() {
-    shortestSide = Math.min(cv.width, cv.height)
-    hypotenuse = Math.sqrt(cv.width * cv.width + cv.height * cv.height)
-    centerRadius = 85.0 / 800 * shortestSide
-  }
+  var resize = function resize() {
+    shortestSide = Math.min(cv.width, cv.height);
+    hypotenuse = Math.sqrt(cv.width * cv.width + cv.height * cv.height);
+    centerRadius = 85.0 / 800 * shortestSide;
+  };
 
-  return Object.freeze({ dampen, resize, draw })
-}
+  return Object.freeze({ dampen: dampen, resize: resize, draw: draw });
+};
 
-},{"./big-color-map":4,"./constrain":5}],14:[function(require,module,exports){
-const colorMap  = require('./big-color-map')
-const constrain = require('./constrain')
-const texture   = require('./create-gradient-texture')
+},{"./big-color-map":4,"clamp":14}],13:[function(require,module,exports){
+'use strict';
 
+var clamp = require('clamp');
+var colorMap = require('./big-color-map');
+var texture = require('./create-gradient-texture');
 
 /*******************************************************************************
 * particles drawn as a cloud of smoke
 */
 function Particle() {
-  this.cx = -200
-  this.cy = -200
-  this.regenerate()
+  this.cx = -200;
+  this.cy = -200;
+  this.regenerate();
 }
 
-Particle.prototype.regenerate = function() {
-  var angle = Math.random() * 2 * Math.PI
-  this.x = Math.cos(angle) * Math.random() * 500 + this.cx
-  this.y = Math.sin(angle) * Math.random() * 500 + this.cy
-  angle = Math.random() * 2 * Math.PI
-  this.dx = Math.cos(angle)
-  this.dy = Math.sin(angle)
-  this.intensity = 0
-  this.di = 0.01 + Math.random() / 50
-  }
+Particle.prototype.regenerate = function () {
+  var angle = Math.random() * 2 * Math.PI;
+  this.x = Math.cos(angle) * Math.random() * 500 + this.cx;
+  this.y = Math.sin(angle) * Math.random() * 500 + this.cy;
+  angle = Math.random() * 2 * Math.PI;
+  this.dx = Math.cos(angle);
+  this.dy = Math.sin(angle);
+  this.intensity = 0;
+  this.di = 0.01 + Math.random() / 50;
+};
 
-Particle.prototype.move = function() {
-  this.x += this.dx * Math.random() * 4
-  this.y += this.dy * Math.random() * 4
-  this.intensity += this.di
+Particle.prototype.move = function () {
+  this.x += this.dx * Math.random() * 4;
+  this.y += this.dy * Math.random() * 4;
+  this.intensity += this.di;
   if (this.intensity < 0) {
-    this.regenerate()
+    this.regenerate();
   } else if (this.intensity > 1) {
-    this.intensity = 1
-    this.di *= -1
+    this.intensity = 1;
+    this.di *= -1;
   }
-}
+};
 
 // sunburst, optionally on clouds
-module.exports = function vizSunburst(options={}) {
-  let { ctx, cv, bandCount, rotateAmount } = options
+module.exports = function vizSunburst() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var ctx = options.ctx,
+      cv = options.cv,
+      bandCount = options.bandCount,
+      rotateAmount = options.rotateAmount;
 
-  const dampen = true
-  let variant = 0
-  let variants = [ true, false ]
 
-  let allRotate = 0
-  let clouds, longestSide
+  var dampen = true;
+  var variant = 0;
+  var variants = [true, false];
 
-  let particleImage = document.createElement('img')
-  texture(particleImage)
-  
-  let particles = []
-  for (let i = 0; i < 25; i++) {
-    particles.push(new Particle())
+  var allRotate = 0;
+  var clouds = void 0,
+      longestSide = void 0;
+
+  var particleImage = document.createElement('img');
+  texture(particleImage);
+
+  var particles = [];
+  for (var i = 0; i < 25; i++) {
+    particles.push(new Particle());
   }
 
-  let draw = function(spectrum) {
-    ctx.save()
-    
-    ctx.fillStyle = '#000000'
-    ctx.fillRect(0, 0, cv.width, cv.height)
-    ctx.translate(cv.width / 2, cv.height / 2)
-    
+  var draw = function draw(spectrum) {
+    ctx.save();
+
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.translate(cv.width / 2, cv.height / 2);
+
     if (clouds) {
-      ctx.globalCompositeOperation = 'screen'
-      for (let i = 0; i < particles.length; i++) {
-        ctx.globalAlpha = particles[i].intensity
-        ctx.drawImage(particleImage, particles[i].x,
-          particles[i].y)
-        particles[i].move()
+      ctx.globalCompositeOperation = 'screen';
+      for (var _i = 0; _i < particles.length; _i++) {
+        ctx.globalAlpha = particles[_i].intensity;
+        ctx.drawImage(particleImage, particles[_i].x, particles[_i].y);
+        particles[_i].move();
       }
     }
-    
-    ctx.rotate(allRotate)
+
+    ctx.rotate(allRotate);
     if (clouds) {
-      ctx.globalCompositeOperation = 'multiply'
-      ctx.globalAlpha = 1.0
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.globalAlpha = 1.0;
     }
-    
-    for (let i = 0; i < bandCount; i++) {
-      ctx.rotate(rotateAmount)
-      let hue = Math.floor(360.0 / bandCount * i) % 360
-      let brightness = constrain(Math.floor(spectrum[i] / 2), 10, 99)
-      ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness]
-      ctx.beginPath()
-      ctx.arc(0, 0, longestSide * 1.5, 0, rotateAmount + 0.1)
-      ctx.lineTo(0, 0)
-      ctx.fill()
-      ctx.closePath()
+
+    for (var _i2 = 0; _i2 < bandCount; _i2++) {
+      ctx.rotate(rotateAmount);
+      var hue = Math.floor(360.0 / bandCount * _i2) % 360;
+      var brightness = clamp(Math.floor(spectrum[_i2] / 2), 10, 99);
+      ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness];
+      ctx.beginPath();
+      ctx.arc(0, 0, longestSide * 1.5, 0, rotateAmount + 0.1);
+      ctx.lineTo(0, 0);
+      ctx.fill();
+      ctx.closePath();
     }
-    allRotate += 0.002
+    allRotate += 0.002;
 
-    ctx.restore()
-  }
+    ctx.restore();
+  };
 
-  let resize = function() {
-    longestSide = Math.max(cv.width, cv.height)
-  }
+  var resize = function resize() {
+    longestSide = Math.max(cv.width, cv.height);
+  };
 
-  let vary = function() {
-    variant = (variant + 1) % variants.length
-    clouds = variants[variant]
-  }
+  var vary = function vary() {
+    variant = (variant + 1) % variants.length;
+    clouds = variants[variant];
+  };
 
-  vary()
+  vary();
 
-  return Object.freeze({ dampen, vary, resize, draw })
+  return Object.freeze({ dampen: dampen, vary: vary, resize: resize, draw: draw });
+};
+
+},{"./big-color-map":4,"./create-gradient-texture":5,"clamp":14}],14:[function(require,module,exports){
+module.exports = clamp
+
+function clamp(value, min, max) {
+  return min < max
+    ? (value < min ? min : value > max ? max : value)
+    : (value < max ? max : value > min ? min : value)
 }
 
-},{"./big-color-map":4,"./constrain":5,"./create-gradient-texture":6}],15:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 // loosely based on example code at https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
 (function (root) {
   'use strict';
@@ -1151,6 +1223,81 @@ module.exports = function vizSunburst(options={}) {
 
 },{}],16:[function(require,module,exports){
 (function (process){
+'use strict';
+
+var callable, byObserver;
+
+callable = function (fn) {
+	if (typeof fn !== 'function') throw new TypeError(fn + " is not a function");
+	return fn;
+};
+
+byObserver = function (Observer) {
+	var node = document.createTextNode(''), queue, currentQueue, i = 0;
+	new Observer(function () {
+		var callback;
+		if (!queue) {
+			if (!currentQueue) return;
+			queue = currentQueue;
+		} else if (currentQueue) {
+			queue = currentQueue.concat(queue);
+		}
+		currentQueue = queue;
+		queue = null;
+		if (typeof currentQueue === 'function') {
+			callback = currentQueue;
+			currentQueue = null;
+			callback();
+			return;
+		}
+		node.data = (i = ++i % 2); // Invoke other batch, to handle leftover callbacks in case of crash
+		while (currentQueue) {
+			callback = currentQueue.shift();
+			if (!currentQueue.length) currentQueue = null;
+			callback();
+		}
+	}).observe(node, { characterData: true });
+	return function (fn) {
+		callable(fn);
+		if (queue) {
+			if (typeof queue === 'function') queue = [queue, fn];
+			else queue.push(fn);
+			return;
+		}
+		queue = fn;
+		node.data = (i = ++i % 2);
+	};
+};
+
+module.exports = (function () {
+	// Node.js
+	if ((typeof process === 'object') && process && (typeof process.nextTick === 'function')) {
+		return process.nextTick;
+	}
+
+	// MutationObserver
+	if ((typeof document === 'object') && document) {
+		if (typeof MutationObserver === 'function') return byObserver(MutationObserver);
+		if (typeof WebKitMutationObserver === 'function') return byObserver(WebKitMutationObserver);
+	}
+
+	// W3C Draft
+	// http://dvcs.w3.org/hg/webperf/raw-file/tip/specs/setImmediate/Overview.html
+	if (typeof setImmediate === 'function') {
+		return function (cb) { setImmediate(callable(cb)); };
+	}
+
+	// Wide available standard
+	if ((typeof setTimeout === 'function') || (typeof setTimeout === 'object')) {
+		return function (cb) { setTimeout(callable(cb), 0); };
+	}
+
+	return null;
+}());
+
+}).call(this,require('_process'))
+},{"_process":2}],17:[function(require,module,exports){
+(function (process){
 // Generated by CoffeeScript 1.7.1
 (function() {
   var getNanoSeconds, hrtime, loadTime;
@@ -1185,7 +1332,7 @@ module.exports = function vizSunburst(options={}) {
 }).call(this);
 
 }).call(this,require('_process'))
-},{"_process":2}],17:[function(require,module,exports){
+},{"_process":2}],18:[function(require,module,exports){
 (function (global){
 var now = require('performance-now')
   , root = typeof window === 'undefined' ? global : window
@@ -1261,4 +1408,4 @@ module.exports.polyfill = function() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"performance-now":16}]},{},[1]);
+},{"performance-now":17}]},{},[1]);

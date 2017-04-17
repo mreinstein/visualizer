@@ -2,6 +2,7 @@
 'use strict';
 
 var getUserMedia = require('get-user-media-promise');
+var nextTick = require('next-tick');
 var raf = require('raf');
 var vizRadialArcs = require('./lib/vizRadialArcs');
 var vizRadialBars = require('./lib/vizRadialBars');
@@ -13,7 +14,6 @@ var vizImage = require('./lib/vizImage');
 
 module.exports = function visualizer() {
   var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
 
   var parent = options.parent ? document.querySelector(options.parent) : window;
   var cv = document.createElement('canvas');
@@ -52,9 +52,9 @@ module.exports = function visualizer() {
   // sets up mic/line-in input
   var _getMediaStream = function _getMediaStream(callback) {
     if (options.stream) {
-      return setTimeout(function () {
+      return nextTick(function () {
         callback(null, options.stream);
-      }, 0);
+      });
     }
 
     getUserMedia({ video: false, audio: true }).then(function (stream) {
@@ -170,7 +170,7 @@ module.exports = function visualizer() {
   return Object.freeze({ addVisualization: addVisualization, showNextVisualization: showNextVisualization, showVisualization: showVisualization, vary: vary });
 };
 
-},{"./lib/vizBoxes":6,"./lib/vizFlyout":7,"./lib/vizImage":8,"./lib/vizRadialArcs":9,"./lib/vizRadialBars":10,"./lib/vizSpikes":11,"./lib/vizSunburst":12,"get-user-media-promise":13,"raf":16}],2:[function(require,module,exports){
+},{"./lib/vizBoxes":5,"./lib/vizFlyout":6,"./lib/vizImage":7,"./lib/vizRadialArcs":8,"./lib/vizRadialBars":9,"./lib/vizSpikes":10,"./lib/vizSunburst":11,"get-user-media-promise":13,"next-tick":14,"raf":17}],2:[function(require,module,exports){
 'use strict';
 
 var HSVtoRGB = require('./hsv-to-rgb');
@@ -196,23 +196,10 @@ module.exports = {
   bigColorMap2: bigColorMap2
 };
 
-},{"./hsv-to-rgb":5}],3:[function(require,module,exports){
-"use strict";
-
-module.exports = function constrain(input, min, max) {
-  if (input < min) {
-    input = min;
-  } else if (input > max) {
-    input = max;
-  }
-  return input;
-};
-
-},{}],4:[function(require,module,exports){
+},{"./hsv-to-rgb":4}],3:[function(require,module,exports){
 'use strict';
 
 module.exports = function textureImage(image) {
-
     var canvas = document.createElement('canvas'),
         ctx = canvas.getContext('2d'),
         grd = void 0;
@@ -234,7 +221,7 @@ module.exports = function textureImage(image) {
     image.src = canvas.toDataURL();
 };
 
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 'use strict';
 
 // http://stackoverflow.com/a/5624139
@@ -287,11 +274,11 @@ module.exports = function HSVtoRGB(h, s, v, hex, separate) {
   }
 };
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 'use strict';
 
+var clamp = require('clamp');
 var colorMap = require('./big-color-map');
-var constrain = require('./constrain');
 
 // a wall of boxes that brighten
 module.exports = function vizBoxes() {
@@ -338,12 +325,12 @@ module.exports = function vizBoxes() {
 
       for (var j = 0; j < Math.floor(loop / 2) + 1; j++) {
         var hue = Math.floor(360.0 / (size * size) * i + hueOffset) % 360;
-        var brightness = constrain(Math.floor(spectrum[i] / 1.5), 10, 99);
+        var brightness = clamp(Math.floor(spectrum[i] / 1.5), 10, 99);
         ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness];
         var intensity = 0.9;
         if (grow) {
           intensity = spectrum[i] / 255 / 4 + 0.65;
-          //intensity = constrain(intensity, 0.1, 0.9)
+          //intensity = clamp(intensity, 0.1, 0.9)
         }
         ctx.fillRect(x * cw + cw / 2 * (1 - intensity), y * ch + ch / 2 * (1 - intensity), cw * intensity, ch * intensity);
 
@@ -372,10 +359,10 @@ module.exports = function vizBoxes() {
   return Object.freeze({ dampen: dampen, vary: vary, resize: resize, draw: draw });
 };
 
-},{"./big-color-map":2,"./constrain":3}],7:[function(require,module,exports){
+},{"./big-color-map":2,"clamp":12}],6:[function(require,module,exports){
 'use strict';
 
-var constrain = require('./constrain');
+var clamp = require('clamp');
 var HSVtoRGB = require('./hsv-to-rgb');
 
 // bars flying from center
@@ -413,7 +400,7 @@ module.exports = function vizFlyout() {
       ctx.lineWidth = 1 + spectrum[_i] / 256 * 5;
 
       var hue = 360.0 / bandCount * _i / 360.0;
-      var brightness = constrain(spectrum[_i] * 1.0 / 150, 0.3, 1);
+      var brightness = clamp(spectrum[_i] * 1.0 / 150, 0.3, 1);
       ctx.strokeStyle = HSVtoRGB(hue, 1, brightness);
 
       distances[_i] += Math.max(50, spectrum[_i]) * heightMultiplier / 40;
@@ -453,11 +440,11 @@ module.exports = function vizFlyout() {
   return Object.freeze({ dampen: dampen, resize: resize, draw: draw, vary: vary });
 };
 
-},{"./constrain":3,"./hsv-to-rgb":5}],8:[function(require,module,exports){
+},{"./hsv-to-rgb":4,"clamp":12}],7:[function(require,module,exports){
 'use strict';
 
+var clamp = require('clamp');
 var colorMap = require('./big-color-map');
-var constrain = require('./constrain');
 
 // an image that's colored to the beat
 module.exports = function vizImage() {
@@ -500,7 +487,7 @@ module.exports = function vizImage() {
       var hue = Math.floor(spectrum[frequency] + hueOffset) % 360;
 
       var brightness = Math.sqrt(frequency / spectrum.length * (spectrum[frequency] / fftSize)) * 100;
-      brightness = constrain(Math.floor(brightness), 0, 99);
+      brightness = clamp(Math.floor(brightness), 0, 99);
       var color = colorMap.bigColorMap2[hue * 100 + brightness];
       bufferImgData.data[i * 4] = color[0];
       bufferImgData.data[i * 4 + 1] = color[1];
@@ -560,7 +547,7 @@ module.exports = function vizImage() {
       var grey = Math.round(imageData.data[i * 4] * 0.2126 + imageData.data[i * 4 + 1] * 0.7152 + imageData.data[i * 4 + 2] * 0.0722);
 
       // fit to spectrum
-      greyscaled.push(Math.round(constrain(grey, 0, 255) / 255 * bandCount));
+      greyscaled.push(Math.round(clamp(grey, 0, 255) / 255 * bandCount));
       // set alpha, near-black parts are invisible
       bufferImgData.data[i * 4 + 3] = grey < 1 ? 0 : 255;
     }
@@ -580,11 +567,11 @@ module.exports = function vizImage() {
   return Object.freeze({ dampen: dampen, resize: resize, draw: draw });
 };
 
-},{"./big-color-map":2,"./constrain":3}],9:[function(require,module,exports){
+},{"./big-color-map":2,"clamp":12}],8:[function(require,module,exports){
 'use strict';
 
+var clamp = require('clamp');
 var colorMap = require('./big-color-map');
-var constrain = require('./constrain');
 
 // arcs coming out from a circle
 module.exports = function vizRadialArcs() {
@@ -628,7 +615,7 @@ module.exports = function vizRadialArcs() {
       var hue = Math.floor(360.0 / bandCount * i);
       var brightness = 99;
       if (fade) {
-        brightness = constrain(Math.floor(spectrum[i] / 1.5), 25, 99);
+        brightness = clamp(Math.floor(spectrum[i] / 1.5), 25, 99);
       }
       ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness];
 
@@ -658,11 +645,11 @@ module.exports = function vizRadialArcs() {
   return Object.freeze({ dampen: dampen, vary: vary, resize: resize, draw: draw });
 };
 
-},{"./big-color-map":2,"./constrain":3}],10:[function(require,module,exports){
+},{"./big-color-map":2,"clamp":12}],9:[function(require,module,exports){
 'use strict';
 
+var clamp = require('clamp');
 var colorMap = require('./big-color-map');
-var constrain = require('./constrain');
 
 // bars coming out from a circle
 module.exports = function vizRadialBars() {
@@ -691,7 +678,7 @@ module.exports = function vizRadialBars() {
       ctx.rotate(rotateAmount);
       var hue = Math.floor(360.0 / bandCount * i);
       if (fade) {
-        var brightness = constrain(Math.floor(spectrum[i] / 1.5), 25, 99);
+        var brightness = clamp(Math.floor(spectrum[i] / 1.5), 25, 99);
         ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness];
         ctx.fillRect(-bandWidth / 2, centerRadius, bandWidth, Math.max(2, spectrum[i] * heightMultiplier));
       } else {
@@ -726,11 +713,11 @@ module.exports = function vizRadialBars() {
   return Object.freeze({ dampen: dampen, vary: vary, resize: resize, draw: draw });
 };
 
-},{"./big-color-map":2,"./constrain":3}],11:[function(require,module,exports){
+},{"./big-color-map":2,"clamp":12}],10:[function(require,module,exports){
 'use strict';
 
+var clamp = require('clamp');
 var colorMap = require('./big-color-map');
-var constrain = require('./constrain');
 
 // spikes coming from off screen
 
@@ -756,7 +743,7 @@ module.exports = function vizSpikes() {
 
     for (var i = 0; i < bandCount; i++) {
       var hue = Math.floor(360.0 / bandCount * i + hueOffset) % 360;
-      var brightness = constrain(Math.floor(spectrum[i] / 1.5), 15, 99);
+      var brightness = clamp(Math.floor(spectrum[i] / 1.5), 15, 99);
       ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness];
 
       var inner = shortestSide / 2;
@@ -783,11 +770,11 @@ module.exports = function vizSpikes() {
   return Object.freeze({ dampen: dampen, resize: resize, draw: draw });
 };
 
-},{"./big-color-map":2,"./constrain":3}],12:[function(require,module,exports){
+},{"./big-color-map":2,"clamp":12}],11:[function(require,module,exports){
 'use strict';
 
+var clamp = require('clamp');
 var colorMap = require('./big-color-map');
-var constrain = require('./constrain');
 var texture = require('./create-gradient-texture');
 
 /*******************************************************************************
@@ -872,7 +859,7 @@ module.exports = function vizSunburst() {
     for (var _i2 = 0; _i2 < bandCount; _i2++) {
       ctx.rotate(rotateAmount);
       var hue = Math.floor(360.0 / bandCount * _i2) % 360;
-      var brightness = constrain(Math.floor(spectrum[_i2] / 2), 10, 99);
+      var brightness = clamp(Math.floor(spectrum[_i2] / 2), 10, 99);
       ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness];
       ctx.beginPath();
       ctx.arc(0, 0, longestSide * 1.5, 0, rotateAmount + 0.1);
@@ -899,7 +886,16 @@ module.exports = function vizSunburst() {
   return Object.freeze({ dampen: dampen, vary: vary, resize: resize, draw: draw });
 };
 
-},{"./big-color-map":2,"./constrain":3,"./create-gradient-texture":4}],13:[function(require,module,exports){
+},{"./big-color-map":2,"./create-gradient-texture":3,"clamp":12}],12:[function(require,module,exports){
+module.exports = clamp
+
+function clamp(value, min, max) {
+  return min < max
+    ? (value < min ? min : value > max ? max : value)
+    : (value < max ? max : value > min ? min : value)
+}
+
+},{}],13:[function(require,module,exports){
 // loosely based on example code at https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
 (function (root) {
   'use strict';
@@ -1012,6 +1008,81 @@ module.exports = function vizSunburst() {
 
 },{}],14:[function(require,module,exports){
 (function (process){
+'use strict';
+
+var callable, byObserver;
+
+callable = function (fn) {
+	if (typeof fn !== 'function') throw new TypeError(fn + " is not a function");
+	return fn;
+};
+
+byObserver = function (Observer) {
+	var node = document.createTextNode(''), queue, currentQueue, i = 0;
+	new Observer(function () {
+		var callback;
+		if (!queue) {
+			if (!currentQueue) return;
+			queue = currentQueue;
+		} else if (currentQueue) {
+			queue = currentQueue.concat(queue);
+		}
+		currentQueue = queue;
+		queue = null;
+		if (typeof currentQueue === 'function') {
+			callback = currentQueue;
+			currentQueue = null;
+			callback();
+			return;
+		}
+		node.data = (i = ++i % 2); // Invoke other batch, to handle leftover callbacks in case of crash
+		while (currentQueue) {
+			callback = currentQueue.shift();
+			if (!currentQueue.length) currentQueue = null;
+			callback();
+		}
+	}).observe(node, { characterData: true });
+	return function (fn) {
+		callable(fn);
+		if (queue) {
+			if (typeof queue === 'function') queue = [queue, fn];
+			else queue.push(fn);
+			return;
+		}
+		queue = fn;
+		node.data = (i = ++i % 2);
+	};
+};
+
+module.exports = (function () {
+	// Node.js
+	if ((typeof process === 'object') && process && (typeof process.nextTick === 'function')) {
+		return process.nextTick;
+	}
+
+	// MutationObserver
+	if ((typeof document === 'object') && document) {
+		if (typeof MutationObserver === 'function') return byObserver(MutationObserver);
+		if (typeof WebKitMutationObserver === 'function') return byObserver(WebKitMutationObserver);
+	}
+
+	// W3C Draft
+	// http://dvcs.w3.org/hg/webperf/raw-file/tip/specs/setImmediate/Overview.html
+	if (typeof setImmediate === 'function') {
+		return function (cb) { setImmediate(callable(cb)); };
+	}
+
+	// Wide available standard
+	if ((typeof setTimeout === 'function') || (typeof setTimeout === 'object')) {
+		return function (cb) { setTimeout(callable(cb), 0); };
+	}
+
+	return null;
+}());
+
+}).call(this,require('_process'))
+},{"_process":16}],15:[function(require,module,exports){
+(function (process){
 // Generated by CoffeeScript 1.7.1
 (function() {
   var getNanoSeconds, hrtime, loadTime;
@@ -1046,7 +1117,7 @@ module.exports = function vizSunburst() {
 }).call(this);
 
 }).call(this,require('_process'))
-},{"_process":15}],15:[function(require,module,exports){
+},{"_process":16}],16:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -1228,7 +1299,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 (function (global){
 var now = require('performance-now')
   , root = typeof window === 'undefined' ? global : window
@@ -1304,5 +1375,5 @@ module.exports.polyfill = function() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"performance-now":14}]},{},[1])(1)
+},{"performance-now":15}]},{},[1])(1)
 });

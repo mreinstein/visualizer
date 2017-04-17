@@ -1,5 +1,6 @@
 
 const getUserMedia  = require('get-user-media-promise')
+const nextTick      = require('next-tick')
 const raf           = require('raf')
 const vizRadialArcs = require('./lib/vizRadialArcs')
 const vizRadialBars = require('./lib/vizRadialBars')
@@ -11,7 +12,6 @@ const vizImage      = require('./lib/vizImage')
 
 
 module.exports = function visualizer(options={}) {
-
   const parent = options.parent ? document.querySelector(options.parent) : window
   const cv = document.createElement('canvas')
   if (!options.parent) {
@@ -25,7 +25,7 @@ module.exports = function visualizer(options={}) {
   }
 
   const ctx = cv.getContext('2d')
-  
+
   const image = options.image
 
   const visualizers = []
@@ -35,7 +35,7 @@ module.exports = function visualizer(options={}) {
   // for audio processing
   //let analyseInterval = 1000 / 30
   const fftSize = 256
- 
+
   // although the actual spectrum size is half the FFT size,
   // the highest frequencies aren't really important here
   const bandCount = Math.round(fftSize / 3)
@@ -49,9 +49,9 @@ module.exports = function visualizer(options={}) {
   // sets up mic/line-in input
   let _getMediaStream = function(callback) {
     if (options.stream) {
-      return setTimeout(function() {
+      return nextTick(function() {
         callback(null, options.stream)
-      }, 0)
+      })
     }
 
     getUserMedia({ video: false, audio: true })
