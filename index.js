@@ -1,6 +1,6 @@
 
 const getUserMedia  = require('get-user-media-promise')
-const nextTick      = require('next-tick')
+const nextTick      = require('next-tick-2')
 const raf           = require('raf')
 const vizRadialArcs = require('./lib/vizRadialArcs')
 const vizRadialBars = require('./lib/vizRadialBars')
