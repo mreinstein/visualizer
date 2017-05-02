@@ -36,7 +36,7 @@
   "dependencies": {
     "clamp": "^1.0.1",
     "get-user-media-promise": "^1.1.1",
-    "next-tick-2": "1.0.0",
+    "next-tick-2": "^1.1.0",
     "raf": "^3.3.0"
   }
 }
