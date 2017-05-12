@@ -1,6 +1,6 @@
 {
   "name": "visualizer.js",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "An HTML5 audio visualizer for mic/line-in input",
   "main": "index.js",
   "scripts": {
