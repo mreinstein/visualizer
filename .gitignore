@@ -1,5 +1,5 @@
 old
 node_modules
-examples/browserify/node_modules
 *.log
 .DS_Store
+package-lock.json
