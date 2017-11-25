@@ -168,9 +168,8 @@ module.exports = function visualizer(options={}) {
   _getMediaStream(function(err, stream) {
     if(err) {
       console.log(err)
-      throw new Error('Unable to start visualization. Make sure you\'re using Chrome or ' +
-        'Firefox with a microphone set up, and that you allow the page to access' +
-        ' the microphone.')
+      throw new Error('Unable to start visualization. Make sure you\'re using a modern browser ' +
+        'with a microphone set up, and that you allow the page to access the microphone.')
     }
     _init(stream)
   })
