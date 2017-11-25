@@ -216,6 +216,7 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 },{}],3:[function(require,module,exports){
+'use strict'
 
 const getUserMedia  = require('get-user-media-promise')
 const nextTick      = require('next-tick-2')
@@ -227,6 +228,7 @@ const vizSunburst   = require('./lib/vizSunburst')
 const vizBoxes      = require('./lib/vizBoxes')
 const vizSpikes     = require('./lib/vizSpikes')
 const vizImage      = require('./lib/vizImage')
+const vizVertBars   = require('./lib/vizVerticalBars')
 
 
 module.exports = function visualizer(options={}) {
@@ -265,12 +267,11 @@ module.exports = function visualizer(options={}) {
   const rotateAmount = (Math.PI * 2.0) / bandCount
 
   // sets up mic/line-in input
-  let _getMediaStream = function(callback) {
-    if (options.stream) {
+  const _getMediaStream = function(callback) {
+    if (options.stream)
       return nextTick(function() {
         callback(null, options.stream)
       })
-    }
 
     getUserMedia({ video: false, audio: true })
       .then(function(stream) {
@@ -282,7 +283,7 @@ module.exports = function visualizer(options={}) {
   }
 
 
-  let _init = function(stream) {
+  const _init = function(stream) {
     // sets up the application loop
 
     // initialize nodes
@@ -298,10 +299,12 @@ module.exports = function visualizer(options={}) {
     source.connect(analyser)
 
     // misc setup
-    for (let i = 0; i < bandCount; i++) { lastVolumes.push(0) }
+    for (let i = 0; i < bandCount; i++)
+      lastVolumes.push(0)
 
     // set up visualizer list
     const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image, fftSize }
+    visualizers.push(vizVertBars(options))
     visualizers.push(vizRadialArcs(options))
     visualizers.push(vizRadialBars(options))
     visualizers.push(vizFlyout(options))
@@ -318,33 +321,39 @@ module.exports = function visualizer(options={}) {
     }
   }
 
+
   // add a new visualizer module
-  let addVisualization = function(viz) {
+  const addVisualization = function(viz) {
     const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image, fftSize }
     visualizers.push(viz(options))
   }
 
-  let showNextVisualization = function() {
+
+  const showNextVisualization = function() {
     currentViz = (currentViz + 1) % visualizers.length
     _recalculateSizes()
   }
 
-  let showVisualization = function(idx) {
-    if (idx < 0) idx = 0
-    if (idx >= visualizers.length) idx = visualizers.length - 1
+
+  const showVisualization = function(idx) {
+    if (idx < 0)
+      idx = 0
+    if (idx >= visualizers.length)
+      idx = visualizers.length - 1
 
     currentViz = idx
     _recalculateSizes()
   }
 
+
   // varies the current visualization
-  let vary = function() {
-    if (visualizers[currentViz].vary) {
+  const vary = function() {
+    if (visualizers[currentViz].vary)
       visualizers[currentViz].vary()
-    }
   }
 
-  let _recalculateSizes = function() {
+
+  const _recalculateSizes = function() {
     const ratio = window.devicePixelRatio || 1
 
     const w = parent.innerWidth || parent.clientWidth
@@ -359,22 +368,20 @@ module.exports = function visualizer(options={}) {
 
 
   // called each audio frame, manages rendering of visualization
-  let _visualize = function() {
+  const _visualize = function() {
     analyser.getByteFrequencyData(spectrum)
 
     // dampen falloff for some visualizations
-    if (visualizers[currentViz].dampen === true) {
-      for (let i = 0; i < spectrum.length; i++) {
-        if (lastVolumes[i] > spectrum[i]) {
+    if (visualizers[currentViz].dampen === true)
+      for (let i = 0; i < spectrum.length; i++)
+        if (lastVolumes[i] > spectrum[i])
           spectrum[i] = (spectrum[i] + lastVolumes[i]) / 2
-        }
-      }
-    }
 
     visualizers[currentViz].draw(spectrum)
 
     raf(_visualize)
   }
+
 
   _getMediaStream(function(err, stream) {
     if(err) {
@@ -389,12 +396,15 @@ module.exports = function visualizer(options={}) {
   return Object.freeze({ addVisualization, showNextVisualization, showVisualization, vary })
 }
 
-},{"./lib/vizBoxes":7,"./lib/vizFlyout":8,"./lib/vizImage":9,"./lib/vizRadialArcs":10,"./lib/vizRadialBars":11,"./lib/vizSpikes":12,"./lib/vizSunburst":13,"get-user-media-promise":15,"next-tick-2":16,"raf":18}],4:[function(require,module,exports){
+},{"./lib/vizBoxes":7,"./lib/vizFlyout":8,"./lib/vizImage":9,"./lib/vizRadialArcs":10,"./lib/vizRadialBars":11,"./lib/vizSpikes":12,"./lib/vizSunburst":13,"./lib/vizVerticalBars":14,"get-user-media-promise":16,"next-tick-2":17,"raf":19}],4:[function(require,module,exports){
+'use strict'
+
 const HSVtoRGB = require('./hsv-to-rgb')
 
 
 const bigColorMap = []
 const bigColorMap2 = []
+
 
 function generateColors() {
   for (let hue = 0; hue < 360; hue++) {
@@ -407,6 +417,7 @@ function generateColors() {
   }
 }
 
+
 generateColors()
 
 module.exports = {
@@ -415,17 +426,17 @@ module.exports = {
 }
 
 },{"./hsv-to-rgb":6}],5:[function(require,module,exports){
+'use strict'
 
 module.exports = function textureImage(image) {
-  let canvas = document.createElement('canvas'),
-      ctx = canvas.getContext('2d'),
-      grd
+  const canvas = document.createElement('canvas'),
+      ctx = canvas.getContext('2d')
 
   canvas.width = 300
   canvas.height = 300
 
   // Create gradient
-  grd = ctx.createRadialGradient(150.000, 150.000, 0.000, 150.000, 150.000, 150.000)
+  const grd = ctx.createRadialGradient(150.000, 150.000, 0.000, 150.000, 150.000, 150.000)
 
   // Add colors
   grd.addColorStop(0.000, 'rgba(255, 255, 255, 1.000)')
@@ -439,10 +450,12 @@ module.exports = function textureImage(image) {
 }
 
 },{}],6:[function(require,module,exports){
+'use strict'
+
 // http://stackoverflow.com/a/5624139
 function componentToHex(c) {
-    let hex = c.toString(16)
-    return hex.length === 1 ? "0" + hex : hex
+    const hex = c.toString(16)
+    return hex.length === 1 ? '0' + hex : hex
 }
 
 // http://stackoverflow.com/a/17243070
@@ -467,16 +480,17 @@ module.exports = function HSVtoRGB(h, s, v, hex, separate) {
   r = Math.floor(r * 255)
   g = Math.floor(g * 255)
   b = Math.floor(b * 255)
-  if (hex) {
+  if (hex)
     return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b)
-  } else if (separate) {
+  else if (separate)
     return [r, g, b]
-  } else {
+  else
     return 'rgb(' + r + ',' + g + ',' + b + ')'
-  }
 }
 
 },{}],7:[function(require,module,exports){
+'use strict'
+
 const clamp    = require('clamp')
 const colorMap = require('./big-color-map')
 
@@ -491,7 +505,8 @@ module.exports = function vizBoxes(options={}) {
   let grow, longestSide
   let hueOffset = 0
 
-  let draw = function(spectrum) {
+
+  const draw = function(spectrum) {
     hueOffset += 0.25
     //spectrum = reduceBuckets(spectrum, 81)
     ctx.clearRect(0, 0, cv.width, cv.height)
@@ -510,10 +525,10 @@ module.exports = function vizBoxes(options={}) {
 
     while (i < size * size) {
       switch(loop % 4) {
-      case 0: dx = 1; dy = 0; break;
-      case 1: dx = 0; dy = 1; break;
-      case 2: dx = -1; dy = 0; break;
-      case 3: dx = 0; dy = -1; break;
+        case 0: dx = 1; dy = 0; break;
+        case 1: dx = 0; dy = 1; break;
+        case 2: dx = -1; dy = 0; break;
+        case 3: dx = 0; dy = -1; break;
       }
 
       for (var j = 0; j < Math.floor(loop / 2) + 1; j++) {
@@ -521,10 +536,8 @@ module.exports = function vizBoxes(options={}) {
         let brightness = clamp(Math.floor(spectrum[i] / 1.5), 10, 99)
         ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness]
         let intensity = 0.9
-        if (grow) {
+        if (grow)
           intensity = spectrum[i] / 255 / 4 + 0.65
-          //intensity = clamp(intensity, 0.1, 0.9)
-        }
         ctx.fillRect(x * cw + cw / 2 * (1 - intensity),
           y * ch + ch / 2 * (1 - intensity), cw * intensity, ch * intensity)
 
@@ -539,21 +552,26 @@ module.exports = function vizBoxes(options={}) {
     ctx.setTransform(1, 0, 0, 1, 0, 0)
   }
 
-  let resize = function() {
+
+  const resize = function() {
     longestSide = Math.max(cv.width, cv.height)
   }
 
-  let vary = function() {
+
+  const vary = function() {
     variant = (variant + 1) % variants.length
     grow = variants[variant][0]
   }
+
 
   vary()
 
   return Object.freeze({ dampen, vary, resize, draw })
 }
 
-},{"./big-color-map":4,"clamp":14}],8:[function(require,module,exports){
+},{"./big-color-map":4,"clamp":15}],8:[function(require,module,exports){
+'use strict'
+
 const clamp    = require('clamp')
 const HSVtoRGB = require('./hsv-to-rgb')
 
@@ -570,11 +588,11 @@ module.exports = function vizFlyout(options={}) {
   const variants = [[2], [3]]
 
   const distances = []
-  for (let i = 0; i < bandCount; i++) {
+  for (let i = 0; i < bandCount; i++)
     distances.push(0)
-  }
 
-  let draw = function(spectrum) {
+
+  const draw = function(spectrum) {
     ctx.save()
     ctx.clearRect(0, 0, cv.width, cv.height)
     ctx.translate(cv.width / 2, cv.height / 2)
@@ -589,16 +607,16 @@ module.exports = function vizFlyout(options={}) {
 
       distances[i] += (Math.max(50, spectrum[i]) * heightMultiplier / 40)
       distances[i] %= offset
-      for (var j = 0; j < bars; j++) {
+      for (var j = 0; j < bars; j++)
         _arc(distances[i] + j * offset, rotateAmount * .75)
-      }
     }
     allRotate += 0.002
 
     ctx.restore()
   }
 
-  let resize = function() {
+
+  const resize = function() {
     const shortestSide = Math.min(cv.width, cv.height)
     longestSide = Math.max(cv.width, cv.height)
     heightMultiplier = 1.0 / 800 * shortestSide
@@ -607,24 +625,29 @@ module.exports = function vizFlyout(options={}) {
     offset = maxDistance / bars
   }
 
-  let vary = function() {
+
+  const vary = function() {
     variant = (variant + 1) % variants.length
     bars = variants[variant][0]
   }
 
-  let _arc = function(distance, angle) {
+
+  const _arc = function(distance, angle) {
     ctx.beginPath()
     ctx.arc(0, 0, distance, 0, angle)
     ctx.stroke()
     ctx.closePath()
   }
 
+
   vary()
 
   return Object.freeze({ dampen, resize, draw, vary })
 }
 
-},{"./hsv-to-rgb":6,"clamp":14}],9:[function(require,module,exports){
+},{"./hsv-to-rgb":6,"clamp":15}],9:[function(require,module,exports){
+'use strict'
+
 const clamp    = require('clamp')
 const colorMap = require('./big-color-map')
 
@@ -644,9 +667,11 @@ module.exports = function vizImage(options={}) {
 
   let hueOffset = 0
 
-  let draw = function(spectrum) {
+
+  const draw = function(spectrum) {
     // if the image hasn't loaded yet, don't render the visualization
-    if (!bufferImgData) return
+    if (!bufferImgData)
+      return
 
     ctx.save()
     ctx.clearRect(0, 0, cv.width, cv.height)
@@ -671,7 +696,8 @@ module.exports = function vizImage(options={}) {
     ctx.restore()
   }
 
-  let resize = function() {
+
+  const resize = function() {
     bufferCv.width = width
     bufferCv.height = height
 
@@ -682,20 +708,21 @@ module.exports = function vizImage(options={}) {
     const sH = Math.floor(h / height)
     scale = Math.min(sW, sH)
 
-    if (scale === 0) { scale = 1 }
+    if (scale === 0)
+      scale = 1
 
     scale *= (window.devicePixelRatio || 1)
 
     tX = Math.floor((cv.width - (width * scale)) / 2)
     tY = Math.floor((cv.height - (height * scale)) / 2)
 
-    ctx.mozImageSmoothingEnabled = false
     ctx.webkitImageSmoothingEnabled = false
     ctx.msImageSmoothingEnabled = false
     ctx.imageSmoothingEnabled = false
   }
 
-  let _generateGreyscaleBuckets = function(image) {
+
+  const _generateGreyscaleBuckets = function(image) {
     width = image.width
     height = image.height
 
@@ -739,7 +766,9 @@ module.exports = function vizImage(options={}) {
   return Object.freeze({ dampen, resize, draw })
 }
 
-},{"./big-color-map":4,"clamp":14}],10:[function(require,module,exports){
+},{"./big-color-map":4,"clamp":15}],10:[function(require,module,exports){
+'use strict'
+
 const clamp    = require('clamp')
 const colorMap = require('./big-color-map')
 
@@ -754,22 +783,24 @@ module.exports = function vizRadialArcs(options={}) {
   let centerRadius, heightMultiplier, gap, fade
 
   let variant = 0
-  let variants = [[false, true], [true, false], [false, false]]
+  const variants = [[false, true], [true, false], [false, false]]
 
-  let vary = function() {
+
+  const vary = function() {
     variant = (variant + 1) % variants.length
     gap = variants[variant][0]
     fade = variants[variant][1]
   }
 
-  let resize = function() {
+
+  const resize = function() {
     const shortestSide = Math.min(cv.width, cv.height)
     centerRadius = 85.0 / 800 * shortestSide
     heightMultiplier = 1.0 / 800 * shortestSide
   }
 
-  let draw = function(spectrum) {
 
+  const draw = function(spectrum) {
     ctx.clearRect(0, 0, cv.width, cv.height)
     ctx.translate(cv.width / 2, cv.height / 2)
     ctx.rotate(allRotate)
@@ -777,9 +808,9 @@ module.exports = function vizRadialArcs(options={}) {
       ctx.rotate(rotateAmount)
       let hue = Math.floor(360.0 / bandCount * i)
       let brightness = 99
-      if (fade) {
+      if (fade)
         brightness = clamp(Math.floor(spectrum[i] / 1.5), 25, 99)
-      }
+
       ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness]
 
       ctx.beginPath()
@@ -805,12 +836,15 @@ module.exports = function vizRadialArcs(options={}) {
     ctx.setTransform(1, 0, 0, 1, 0, 0)
   }
 
+
   vary()
 
   return Object.freeze({ dampen, vary, resize, draw })
 }
 
-},{"./big-color-map":4,"clamp":14}],11:[function(require,module,exports){
+},{"./big-color-map":4,"clamp":15}],11:[function(require,module,exports){
+'use strict'
+
 const clamp    = require('clamp')
 const colorMap = require('./big-color-map')
 
@@ -825,7 +859,8 @@ module.exports = function vizRadialBars(options={}) {
   let variants = [[false], [true]]
   let allRotate = 0
 
-  let draw = function(spectrum) {
+
+  const draw = function(spectrum) {
     ctx.clearRect(0, 0, cv.width, cv.height)
     ctx.translate(cv.width / 2, cv.height / 2)
     ctx.rotate(allRotate)
@@ -853,12 +888,12 @@ module.exports = function vizRadialBars(options={}) {
     ctx.setTransform(1, 0, 0, 1, 0, 0)
   }
 
-  let vary = function() {
+  const vary = function() {
     variant = (variant + 1) % variants.length
     fade = variants[variant][0]
   }
 
-  let resize = function() {
+  const resize = function() {
     const shortestSide = Math.min(cv.width, cv.height)
     centerRadius = 85.0 / 800 * shortestSide
     heightMultiplier = 1.0 / 800 * shortestSide
@@ -870,7 +905,9 @@ module.exports = function vizRadialBars(options={}) {
   return Object.freeze({ dampen, vary, resize, draw })
 }
 
-},{"./big-color-map":4,"clamp":14}],12:[function(require,module,exports){
+},{"./big-color-map":4,"clamp":15}],12:[function(require,module,exports){
+'use strict'
+
 const clamp    = require('clamp')
 const colorMap = require('./big-color-map')
 
@@ -884,7 +921,8 @@ module.exports = function vizSpikes(options={}) {
   let centerRadius, hypotenuse, shortestSide
   let hueOffset = 0
 
-  let draw = function(spectrum) {
+
+  const draw = function(spectrum) {
     hueOffset += 1
     ctx.clearRect(0, 0, cv.width, cv.height)
     ctx.translate(cv.width / 2, cv.height / 2)
@@ -910,16 +948,20 @@ module.exports = function vizSpikes(options={}) {
     ctx.setTransform(1, 0, 0, 1, 0, 0)
   }
 
-  let resize = function() {
+
+  const resize = function() {
     shortestSide = Math.min(cv.width, cv.height)
     hypotenuse = Math.sqrt(cv.width * cv.width + cv.height * cv.height)
     centerRadius = 85.0 / 800 * shortestSide
   }
 
+
   return Object.freeze({ dampen, resize, draw })
 }
 
-},{"./big-color-map":4,"clamp":14}],13:[function(require,module,exports){
+},{"./big-color-map":4,"clamp":15}],13:[function(require,module,exports){
+'use strict'
+
 const clamp    = require('clamp')
 const colorMap = require('./big-color-map')
 const texture  = require('./create-gradient-texture')
@@ -968,15 +1010,15 @@ module.exports = function vizSunburst(options={}) {
   let allRotate = 0
   let clouds, longestSide
 
-  let particleImage = document.createElement('img')
+  const particleImage = document.createElement('img')
   texture(particleImage)
 
-  let particles = []
-  for (let i = 0; i < 25; i++) {
+  const particles = []
+  for (let i = 0; i < 25; i++)
     particles.push(new Particle())
-  }
 
-  let draw = function(spectrum) {
+
+  const draw = function(spectrum) {
     ctx.save()
 
     ctx.fillStyle = '#000000'
@@ -1015,21 +1057,78 @@ module.exports = function vizSunburst(options={}) {
     ctx.restore()
   }
 
-  let resize = function() {
+
+  const resize = function() {
     longestSide = Math.max(cv.width, cv.height)
   }
 
-  let vary = function() {
+
+  const vary = function() {
     variant = (variant + 1) % variants.length
     clouds = variants[variant]
   }
+
 
   vary()
 
   return Object.freeze({ dampen, vary, resize, draw })
 }
 
-},{"./big-color-map":4,"./create-gradient-texture":5,"clamp":14}],14:[function(require,module,exports){
+},{"./big-color-map":4,"./create-gradient-texture":5,"clamp":15}],14:[function(require,module,exports){
+'use strict'
+
+const clamp    = require('clamp')
+const colorMap = require('./big-color-map')
+
+
+module.exports = function vizVerticalBars(options={}) {
+  let { ctx, cv, bandCount, rotateAmount } = options
+
+  const dampen = true
+  let allRotate = 0
+
+  let centerRadius, heightMultiplier, gap, fade
+
+  let variant = 0
+  const variants = [[false, true], [true, false], [false, false]]
+
+
+  const vary = function() {
+    variant = (variant + 1) % variants.length
+    gap = variants[variant][0]
+    fade = variants[variant][1]
+  }
+
+
+  const resize = function() {
+    const shortestSide = Math.min(cv.width, cv.height)
+    centerRadius = 85.0 / 800 * shortestSide
+    heightMultiplier = 1.0 / 800 * shortestSide
+  }
+
+
+  const draw = function(spectrum) {
+    ctx.clearRect(0, 0, cv.width, cv.height)
+    let barWidth = cv.width / bandCount
+
+    for (let i = 0; i < bandCount; i++) {
+      let hue = Math.floor(360.0 / bandCount * i)
+      let brightness = fade ? clamp(Math.floor(spectrum[i] / 1.5), 25, 99) : 99
+
+      ctx.fillStyle = colorMap.bigColorMap[hue * 100 + brightness]
+
+      let barHeight = cv.height * (spectrum[i] / 255)
+      ctx.fillRect(i * barWidth, cv.height - barHeight, barWidth, barHeight)
+    }
+  }
+
+
+  vary()
+
+  return Object.freeze({ dampen, vary, resize, draw })
+}
+
+},{"./big-color-map":4,"clamp":15}],15:[function(require,module,exports){
 module.exports = clamp
 
 function clamp(value, min, max) {
@@ -1038,7 +1137,7 @@ function clamp(value, min, max) {
     : (value < max ? max : value > min ? min : value)
 }
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 // loosely based on example code at https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
 (function (root) {
   'use strict';
@@ -1149,7 +1248,7 @@ function clamp(value, min, max) {
   }
 }(this));
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 'use strict'
 
 var ensureCallable = function (fn) {
@@ -1213,7 +1312,7 @@ module.exports = (function () {
 	}
 }())
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 (function (process){
 // Generated by CoffeeScript 1.12.2
 (function() {
@@ -1253,7 +1352,7 @@ module.exports = (function () {
 
 
 }).call(this,require('_process'))
-},{"_process":2}],18:[function(require,module,exports){
+},{"_process":2}],19:[function(require,module,exports){
 (function (global){
 var now = require('performance-now')
   , root = typeof window === 'undefined' ? global : window
@@ -1323,10 +1422,13 @@ module.exports = function(fn) {
 module.exports.cancel = function() {
   caf.apply(root, arguments)
 }
-module.exports.polyfill = function() {
-  root.requestAnimationFrame = raf
-  root.cancelAnimationFrame = caf
+module.exports.polyfill = function(object) {
+  if (!object) {
+    object = root;
+  }
+  object.requestAnimationFrame = raf
+  object.cancelAnimationFrame = caf
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"performance-now":17}]},{},[1]);
+},{"performance-now":18}]},{},[1]);

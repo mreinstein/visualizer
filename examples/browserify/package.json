@@ -4,11 +4,12 @@
   "description": "shows how to use the visualizer with browserify",
   "main": "index.js",
   "scripts": {
-    "build": "browserify index.js --outfile bundle.js"
+    "build": "browserify index.js --outfile bundle.js",
+    "watch": "watchify index.js -v -o bundle.js --verbose"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "browserify": "^14.1.0"
+    "watchify": "^3.9.0"
   }
 }

@@ -1,3 +1,4 @@
+'use strict'
 
 const getUserMedia  = require('get-user-media-promise')
 const nextTick      = require('next-tick-2')
@@ -9,6 +10,7 @@ const vizSunburst   = require('./lib/vizSunburst')
 const vizBoxes      = require('./lib/vizBoxes')
 const vizSpikes     = require('./lib/vizSpikes')
 const vizImage      = require('./lib/vizImage')
+const vizVertBars   = require('./lib/vizVerticalBars')
 
 
 module.exports = function visualizer(options={}) {
@@ -47,12 +49,11 @@ module.exports = function visualizer(options={}) {
   const rotateAmount = (Math.PI * 2.0) / bandCount
 
   // sets up mic/line-in input
-  let _getMediaStream = function(callback) {
-    if (options.stream) {
+  const _getMediaStream = function(callback) {
+    if (options.stream)
       return nextTick(function() {
         callback(null, options.stream)
       })
-    }
 
     getUserMedia({ video: false, audio: true })
       .then(function(stream) {
@@ -64,7 +65,7 @@ module.exports = function visualizer(options={}) {
   }
 
 
-  let _init = function(stream) {
+  const _init = function(stream) {
     // sets up the application loop
 
     // initialize nodes
@@ -80,10 +81,12 @@ module.exports = function visualizer(options={}) {
     source.connect(analyser)
 
     // misc setup
-    for (let i = 0; i < bandCount; i++) { lastVolumes.push(0) }
+    for (let i = 0; i < bandCount; i++)
+      lastVolumes.push(0)
 
     // set up visualizer list
     const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image, fftSize }
+    visualizers.push(vizVertBars(options))
     visualizers.push(vizRadialArcs(options))
     visualizers.push(vizRadialBars(options))
     visualizers.push(vizFlyout(options))
@@ -100,33 +103,39 @@ module.exports = function visualizer(options={}) {
     }
   }
 
+
   // add a new visualizer module
-  let addVisualization = function(viz) {
+  const addVisualization = function(viz) {
     const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image, fftSize }
     visualizers.push(viz(options))
   }
 
-  let showNextVisualization = function() {
+
+  const showNextVisualization = function() {
     currentViz = (currentViz + 1) % visualizers.length
     _recalculateSizes()
   }
 
-  let showVisualization = function(idx) {
-    if (idx < 0) idx = 0
-    if (idx >= visualizers.length) idx = visualizers.length - 1
+
+  const showVisualization = function(idx) {
+    if (idx < 0)
+      idx = 0
+    if (idx >= visualizers.length)
+      idx = visualizers.length - 1
 
     currentViz = idx
     _recalculateSizes()
   }
 
+
   // varies the current visualization
-  let vary = function() {
-    if (visualizers[currentViz].vary) {
+  const vary = function() {
+    if (visualizers[currentViz].vary)
       visualizers[currentViz].vary()
-    }
   }
 
-  let _recalculateSizes = function() {
+
+  const _recalculateSizes = function() {
     const ratio = window.devicePixelRatio || 1
 
     const w = parent.innerWidth || parent.clientWidth
@@ -141,22 +150,20 @@ module.exports = function visualizer(options={}) {
 
 
   // called each audio frame, manages rendering of visualization
-  let _visualize = function() {
+  const _visualize = function() {
     analyser.getByteFrequencyData(spectrum)
 
     // dampen falloff for some visualizations
-    if (visualizers[currentViz].dampen === true) {
-      for (let i = 0; i < spectrum.length; i++) {
-        if (lastVolumes[i] > spectrum[i]) {
+    if (visualizers[currentViz].dampen === true)
+      for (let i = 0; i < spectrum.length; i++)
+        if (lastVolumes[i] > spectrum[i])
           spectrum[i] = (spectrum[i] + lastVolumes[i]) / 2
-        }
-      }
-    }
 
     visualizers[currentViz].draw(spectrum)
 
     raf(_visualize)
   }
+
 
   _getMediaStream(function(err, stream) {
     if(err) {
