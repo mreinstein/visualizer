@@ -14,16 +14,18 @@ const vizVertBars   = require('./lib/vizVerticalBars')
 
 
 module.exports = function visualizer(options={}) {
-  const parent = options.parent ? document.querySelector(options.parent) : window
   const cv = document.createElement('canvas')
-  if (!options.parent) {
+
+  let parent
+  if(options.parent) {
+    parent = (typeof options.parent === 'string') ? document.querySelector(options.parent) : options.parent
+    parent.appendChild(cv)
+  } else {
     cv.style.position = 'absolute'
     cv.style.left = '0'
     cv.style.top = '0'
     document.body.appendChild(cv)
-  }
-  else {
-    parent.appendChild(cv)
+    parent = window
   }
 
   const ctx = cv.getContext('2d')

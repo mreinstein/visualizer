@@ -21,7 +21,8 @@ var visualizer = require('visualizer.js')
 var options = {
   // string indicating which container element should hold the visualization.
   // If specified it will stretch to fit this container's width and height.
-  // If omitted it will assume a full screen visualization and fit to the window
+  // If omitted it will assume a full screen visualization and fit to the window.
+  // You may pass a query selector string here, or a DOM element.
   parent: '#my-container-div',
 
   // specify the image that is used by the vizImage visualization
