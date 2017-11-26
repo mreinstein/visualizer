@@ -32,7 +32,7 @@ module.exports = function visualizer(options={}) {
 
   const visualizers = []
 
-  let currentViz = 0
+  let analyser, spectrum, audioCtx, currentViz = 0
 
   // for audio processing
   //let analyseInterval = 1000 / 30
@@ -41,8 +41,6 @@ module.exports = function visualizer(options={}) {
   // although the actual spectrum size is half the FFT size,
   // the highest frequencies aren't really important here
   const bandCount = Math.round(fftSize / 3)
-
-  let analyser, spectrum
 
   const lastVolumes = []
 
@@ -69,16 +67,9 @@ module.exports = function visualizer(options={}) {
     // sets up the application loop
 
     // initialize nodes
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    const source = audioCtx.createMediaStreamSource(stream)
-    analyser = audioCtx.createAnalyser()
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)()
 
-    // set node properties and connect
-    analyser.smoothingTimeConstant = 0.2
-    analyser.fftSize = fftSize
-
-    spectrum = new Uint8Array(analyser.frequencyBinCount)
-    source.connect(analyser)
+    setMediaStream(stream)
 
     // misc setup
     for (let i = 0; i < bandCount; i++)
@@ -108,6 +99,19 @@ module.exports = function visualizer(options={}) {
   const addVisualization = function(viz) {
     const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image, fftSize }
     visualizers.push(viz(options))
+  }
+
+
+  const setMediaStream = function(stream) {
+    const source = audioCtx.createMediaStreamSource(stream)
+    analyser = audioCtx.createAnalyser()
+
+    // set node properties and connect
+    analyser.smoothingTimeConstant = 0.2
+    analyser.fftSize = fftSize
+
+    spectrum = new Uint8Array(analyser.frequencyBinCount)
+    source.connect(analyser)
   }
 
 
@@ -174,5 +178,5 @@ module.exports = function visualizer(options={}) {
     _init(stream)
   })
 
-  return Object.freeze({ addVisualization, showNextVisualization, showVisualization, vary })
+  return Object.freeze({ addVisualization, setMediaStream, showNextVisualization, showVisualization, vary })
 }
