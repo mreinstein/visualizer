@@ -11,7 +11,7 @@
   <meta property="og:title" content="Visualizer" />
   <meta property="og:description" content="HTML5 audio visualizer for microphone or line-in input. Chrome recommended, Firefox works OK. Click or use 1-7 to select a visualization and press += to change variants." />
   <meta property="og:image" content="../../thumbnail.jpg" />
-  <script type="text/javascript" src="../../visualizer.browser.js"></script>
+  <script type="text/javascript" src="../../dist/visualizer.global.js"></script>
 </head>
 <body>
   <div id="container" style="width: 400px; height: 390px;"></div>
@@ -29,22 +29,17 @@
       console.error(err.message)
       alert(err.message)
     }
-    
+
     var bodyElement = document.getElementsByTagName('body')[0]
 
-    bodyElement.onkeyup = function(e) {
-      var ev = e || event
-
-      if (ev.keyCode >= 49 && ev.keyCode < 58) {
+    bodyElement.onkeyup = function (ev) {
+      if (ev.keyCode >= 49 && ev.keyCode < 58)
         viz.showVisualization(ev.keyCode - 49)
-      } else if (ev.keyCode == 187 || ev.keyCode == 61) {
+      else if (ev.key === '=')
         viz.vary()
-      }
     }
 
-    bodyElement.onclick = function() {
-      viz.showNextVisualization()
-    }
+    bodyElement.onclick = viz.showNextVisualization
 
   </script>
 </body>

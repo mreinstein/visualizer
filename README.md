@@ -10,15 +10,34 @@ A HTML5 audio visualizer for microphone or line-in input.
 A browser with `canvas` and `getUserMedia` support. (Currently Chrome, Firefox, Edge, and Opera)
 
 
+## Including
+
+If you're using es modules or commonjs (node) you can include visualizer:
+
+```javascript
+import visualizer from 'visualizer.js'  // modern es modules approach
+
+// *OR*
+
+const visualizer = require('visualizer.js') // commonjs (node) approach
+```
+
+Alternatively if you want to use this as an HTML script tag:
+
+```html
+<script src="dist/visualizer.global.min.js"></script>
+```
+
+This will expose `visualizer` as a javascript global variable.
+
+
 ## Configuration
 
 Several parameters are supported when creating a visualizer instance. These are all optional.
 
+
 ```javascript
-
-var visualizer = require('visualizer.js')
-
-var options = {
+const options = {
   // string indicating which container element should hold the visualization.
   // If specified it will stretch to fit this container's width and height.
   // If omitted it will assume a full screen visualization and fit to the window.
@@ -33,7 +52,7 @@ var options = {
   stream: mediaStream
 }
 
-var viz = visualizer(options)
+const viz = visualizer(options)
 ```
 
 
@@ -44,7 +63,7 @@ open any of the index files in the `examples/` directory.
 You'll be prompted to allow microphone access. Upon accepting, the visualizations will start playing.
 
 * Press number keys `1` - `7` to select a visualization.
-* Press `+`/`=` key to switch between variants of that visualization. Some visualizations don't have a variant.
+* Press `=` key to switch between variants of that visualization. Some visualizations don't have a variant.
 
 
 ## generating your own visualizations
@@ -53,9 +72,8 @@ The `visualizer` module is pluggable; you can write your own visualizations as l
 expected interface. Look at any of the modules written in `lib/viz*` to see how this is done.
 
 ```javascript
-var visualizer = require('visualizer.js')
+import myVizPlugin from './some-visualizer-i-wrote.js'
+const viz = visualizer()
 
-var viz = visualizer()
-
-viz.addVisualization(require('./some-visualizer-i-wrote'))
+viz.addVisualization(myVizPlugin)
 ```

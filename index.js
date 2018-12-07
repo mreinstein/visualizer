@@ -1,22 +1,18 @@
-'use strict'
-
-const getUserMedia  = require('get-user-media-promise')
-const raf           = require('raf')
-const vizRadialArcs = require('./lib/vizRadialArcs')
-const vizRadialBars = require('./lib/vizRadialBars')
-const vizFlyout     = require('./lib/vizFlyout')
-const vizSunburst   = require('./lib/vizSunburst')
-const vizBoxes      = require('./lib/vizBoxes')
-const vizSpikes     = require('./lib/vizSpikes')
-const vizImage      = require('./lib/vizImage')
-const vizVertBars   = require('./lib/vizVerticalBars')
+import vizRadialArcs from './lib/vizRadialArcs.js'
+import vizRadialBars from './lib/vizRadialBars.js'
+import vizFlyout     from './lib/vizFlyout.js'
+import vizSunburst   from './lib/vizSunburst.js'
+import vizBoxes      from './lib/vizBoxes.js'
+import vizSpikes     from './lib/vizSpikes.js'
+import vizImage      from './lib/vizImage.js'
+import vizVertBars   from './lib/vizVerticalBars.js'
 
 
-module.exports = function visualizer(options={}) {
+export default function visualizer (options={}) {
   const cv = document.createElement('canvas')
 
   let parent
-  if(options.parent) {
+  if (options.parent) {
     parent = (typeof options.parent === 'string') ? document.querySelector(options.parent) : options.parent
     parent.appendChild(cv)
   } else {
@@ -48,12 +44,12 @@ module.exports = function visualizer(options={}) {
   const rotateAmount = (Math.PI * 2.0) / bandCount
 
   // sets up mic/line-in input
-  const _getMediaStream = function(callback) {
+  const _getMediaStream = function (callback) {
     if (options.stream)
       return setTimeout(callback, 0, null, options.stream)
 
-    getUserMedia({ video: false, audio: true })
-      .then(function(stream) {
+    navigator.mediaDevices.getUserMedia({ video: false, audio: true })
+      .then(function (stream) {
         callback(null, stream)
       })
       .catch(function(e) {
@@ -62,7 +58,7 @@ module.exports = function visualizer(options={}) {
   }
 
 
-  const _init = function(stream) {
+  const _init = function (stream) {
     // sets up the application loop
 
     // initialize nodes
@@ -86,7 +82,7 @@ module.exports = function visualizer(options={}) {
     visualizers.push(vizImage(options))
 
     _recalculateSizes()
-    _visualize()
+    requestAnimationFrame(_visualize)
 
     window.onresize = function() {
       _recalculateSizes()
@@ -95,13 +91,13 @@ module.exports = function visualizer(options={}) {
 
 
   // add a new visualizer module
-  const addVisualization = function(viz) {
+  const addVisualization = function (viz) {
     const options = { cv, ctx, bandCount, rotateAmount, lastVolumes, image, fftSize }
     visualizers.push(viz(options))
   }
 
 
-  const setMediaStream = function(stream) {
+  const setMediaStream = function (stream) {
     const source = audioCtx.createMediaStreamSource(stream)
     analyser = audioCtx.createAnalyser()
 
@@ -114,13 +110,13 @@ module.exports = function visualizer(options={}) {
   }
 
 
-  const showNextVisualization = function() {
+  const showNextVisualization = function () {
     currentViz = (currentViz + 1) % visualizers.length
     _recalculateSizes()
   }
 
 
-  const showVisualization = function(idx) {
+  const showVisualization = function (idx) {
     if (idx < 0)
       idx = 0
     if (idx >= visualizers.length)
@@ -132,13 +128,13 @@ module.exports = function visualizer(options={}) {
 
 
   // varies the current visualization
-  const vary = function() {
+  const vary = function () {
     if (visualizers[currentViz].vary)
       visualizers[currentViz].vary()
   }
 
 
-  const _recalculateSizes = function() {
+  const _recalculateSizes = function () {
     const ratio = window.devicePixelRatio || 1
 
     const w = parent.innerWidth || parent.clientWidth
@@ -153,7 +149,7 @@ module.exports = function visualizer(options={}) {
 
 
   // called each audio frame, manages rendering of visualization
-  const _visualize = function() {
+  const _visualize = function () {
     analyser.getByteFrequencyData(spectrum)
 
     // dampen falloff for some visualizations
@@ -164,12 +160,12 @@ module.exports = function visualizer(options={}) {
 
     visualizers[currentViz].draw(spectrum)
 
-    raf(_visualize)
+    requestAnimationFrame(_visualize)
   }
 
 
-  _getMediaStream(function(err, stream) {
-    if(err) {
+  _getMediaStream(function (err, stream) {
+    if (err) {
       console.log(err)
       throw new Error('Unable to start visualization. Make sure you\'re using a modern browser ' +
         'with a microphone set up, and that you allow the page to access the microphone.')

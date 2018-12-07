@@ -2,26 +2,37 @@
   "name": "visualizer.js",
   "version": "2.3.0",
   "description": "An HTML5 audio visualizer for mic/line-in input",
-  "main": "index.js",
+  "main": "dist/visualizer.cjs.js",
+  "module": "dist/visualizer.esm.js",
   "scripts": {
-    "build": "browserify index.js --standalone visualizer --outfile visualizer.browser.js && npm run compress",
-    "compress": "uglifyjs visualizer.browser.js --compress --mangle > visualizer.browser.min.js",
-    "watch": "watchify index.js -v -o visualizer.browser.js --verbose --standalone visualizer"
+    "build": "npm-run-all -p build:*",
+    "build:cjs": "rollup index.js -c rollup.config.js --file dist/visualizer.cjs.js --format cjs",
+    "build:esm": "rollup index.js -c rollup.config.js --file dist/visualizer.esm.js --format esm",
+    "build:global": "rollup index.js -c rollup.config.js --format iife --name visualizer --file dist/visualizer.global.js",
+    "compress": "terser dist/visualizer.global.js --compress --mangle > dist/visualizer.global.min.js",
+    "prepublishOnly": "npm-run-all -s build compress",
+    "watch": "rollup index.js --file dist/visualizer.global.js --format iife --name visualizer --watch"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mreinstein/visualizer.git"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run prepublishOnly"
+    }
+  },
   "author": "Ian Harmon",
   "license": "MIT",
   "devDependencies": {
-    "browserify": "^15.0.0",
-    "uglify-es": "^3.3.5",
-    "watchify": "^3.9.0"
+    "husky": "^1.2.0",
+    "npm-run-all": "^4.1.5",
+    "rollup": "^0.67.4",
+    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-node-resolve": "^3.4.0",
+    "terser": "^3.11.0"
   },
   "dependencies": {
-    "clamp": "^1.0.1",
-    "get-user-media-promise": "^1.1.1",
-    "raf": "^3.3.0"
+    "clamp": "^1.0.1"
   }
 }
