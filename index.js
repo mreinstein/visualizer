@@ -1,7 +1,6 @@
 'use strict'
 
 const getUserMedia  = require('get-user-media-promise')
-const nextTick      = require('next-tick-2')
 const raf           = require('raf')
 const vizRadialArcs = require('./lib/vizRadialArcs')
 const vizRadialBars = require('./lib/vizRadialBars')
@@ -51,9 +50,7 @@ module.exports = function visualizer(options={}) {
   // sets up mic/line-in input
   const _getMediaStream = function(callback) {
     if (options.stream)
-      return nextTick(function() {
-        callback(null, options.stream)
-      })
+      return setTimeout(callback, 0, null, options.stream)
 
     getUserMedia({ video: false, audio: true })
       .then(function(stream) {
