@@ -1,3 +1,12 @@
+### 3.0.0
+* drop node support < 12.17
+* drop commonjs and global script builds
+* inline clamp because it's the only external dependency and it's tiny
+* drop all build steps
+* drop dist/
+* simplify example and move it to project root
+
+
 ### 2017-05-11 - 2.0.0
 
 * replace babel and uglifyjs modules with uglify-es
