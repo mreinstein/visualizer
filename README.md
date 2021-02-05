@@ -35,9 +35,9 @@ const viz = visualizer(options)
 ```
 
 
-## Running the examples
+## Running the example
 
-open any of the index files in the `examples/` directory.
+open `example.html` in a browser.
 
 You'll be prompted to allow microphone access. Upon accepting, the visualizations will start playing.
 
