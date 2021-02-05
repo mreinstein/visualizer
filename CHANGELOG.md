@@ -1,4 +1,4 @@
-### 3.0.0
+### 4.0.0
 * drop node support < 12.17
 * drop commonjs and global script builds
 * inline clamp because it's the only external dependency and it's tiny
