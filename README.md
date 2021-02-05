@@ -10,33 +10,12 @@ A HTML5 audio visualizer for microphone or line-in input.
 A browser with `canvas` and `getUserMedia` support. (Currently Chrome, Firefox, Edge, and Opera)
 
 
-## Including
-
-If you're using es modules or commonjs (node) you can include visualizer:
+## usage
 
 ```javascript
-import visualizer from 'visualizer.js'  // modern es modules approach
-
-// *OR*
-
-const visualizer = require('visualizer.js') // commonjs (node) approach
-```
-
-Alternatively if you want to use this as an HTML script tag:
-
-```html
-<script src="dist/visualizer.global.min.js"></script>
-```
-
-This will expose `visualizer` as a javascript global variable.
+import visualizer from 'visualizer.js'
 
 
-## Configuration
-
-Several parameters are supported when creating a visualizer instance. These are all optional.
-
-
-```javascript
 const options = {
   // string indicating which container element should hold the visualization.
   // If specified it will stretch to fit this container's width and height.
@@ -72,7 +51,9 @@ The `visualizer` module is pluggable; you can write your own visualizations as l
 expected interface. Look at any of the modules written in `lib/viz*` to see how this is done.
 
 ```javascript
+import visualizer  from 'visualizer.js'
 import myVizPlugin from './some-visualizer-i-wrote.js'
+
 const viz = visualizer()
 
 viz.addVisualization(myVizPlugin)
