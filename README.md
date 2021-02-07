@@ -13,7 +13,7 @@ A browser with `canvas` and `getUserMedia` support. (Currently Chrome, Firefox, 
 ## usage
 
 ```javascript
-import visualizer from 'visualizer.js'
+import visualizer from 'visualizer'
 
 
 const options = {
@@ -51,7 +51,7 @@ The `visualizer` module is pluggable; you can write your own visualizations as l
 expected interface. Look at any of the modules written in `lib/viz*` to see how this is done.
 
 ```javascript
-import visualizer  from 'visualizer.js'
+import visualizer  from 'visualizer'
 import myVizPlugin from './some-visualizer-i-wrote.js'
 
 const viz = visualizer()
