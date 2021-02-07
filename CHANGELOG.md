@@ -1,4 +1,9 @@
-### 4.0.0
+### 3.0.1
+* fix stray name
+
+
+### 3.0.0
+* take over visualizer npm repo, move `visualizer.js` to `visualizer`
 * drop node support < 12.17
 * drop commonjs and global script builds
 * inline clamp because it's the only external dependency and it's tiny
